@@ -20,6 +20,21 @@ def rhombus_mesh(x, y, n, m, a):
     return mesh
 
 
+def board_draw(surface, mesh):
+    r = 5
+    for i in range(len(mesh)):
+        for j in range(len(mesh[i])):
+            a = mesh[i][j]
+            if i + 1 < len(mesh):
+                pygame.draw.aaline(surface, WHITE, a, mesh[i + 1][j])
+                if j - 1 >= 0:
+                    pygame.draw.aaline(surface, WHITE, a, mesh[i + 1][j - 1])
+            if j + 1 < len(mesh[i]):
+                pygame.draw.aaline(surface, WHITE, a, mesh[i][j + 1])
+
+            pygame.draw.ellipse(surface, BLUE,
+                                (a[0] - r, a[1] - r, 2 * r, 2 * r))
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -30,7 +45,10 @@ winsize = (800, 600)
 pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
-pprint(rhombus_mesh(20, winsize[1] // 2, 8, 8, 50))
+matrix = rhombus_mesh(20, winsize[1] // 2, 8, 8, 50)
+pprint(matrix)
+board_draw(canvas, matrix)
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

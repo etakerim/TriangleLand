@@ -4,20 +4,41 @@ import pygame
 from pprint import pprint
 
 
-def rhombus_mesh(x, y, n, m, a):
-    h = (math.sqrt(3) * a) / 2
+def triangle_mesh(x, y, n, m, a):
+    # h = a / 2                       # Isosceles right triangle
+    h = (math.sqrt(3) * a) / 2        # Equilateral triangle
     a_half = a / 2
-    vertex = (float(x), float(y))
+    vertex = [float(x), float(y)]
     mesh = []
 
     for i in range(1, n + 1):
         mesh.append([])
         for j in range(m):
             mesh[-1].append(vertex)
-            vertex = (vertex[0] + h, vertex[1] - a_half)
-        vertex = (x + i * h, y + i * a_half)
+            vertex = [vertex[0] + h, vertex[1] - a_half]
+        vertex = [x + i * h, y + i * a_half]
 
     return mesh
+
+
+def rotate_mesh(c, mesh, angle):
+    mid = [(mesh[0][0][0] + mesh[-1][-1][0]) / 2,
+           (mesh[0][-1][1] + mesh[-1][0][1]) / 2]
+    cos_angle = math.cos(angle)
+    sin_angle = math.sin(angle)
+
+    pygame.draw.ellipse(c, RED, (mid[0] - 5, mid[1] - 5, 10, 10))
+    for i in range(len(mesh)):
+        for j in range(len(mesh[i])):
+            vector = [mesh[i][j][0] - mid[0], mesh[i][j][1] - mid[1]]
+            pygame.draw.line(c, RED, mid, mesh[i][j])
+            pygame.display.update()
+            new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
+                          vector[0] * sin_angle + vector[1] * cos_angle]
+            mesh[i][j] = [mid[0] + new_vector[0], mid[1] + new_vector[1]]
+            pygame.draw.line(c, GREEN, mid, mesh[i][j])
+            pygame.display.update()
+            pygame.time.delay(100)
 
 
 def board_draw(surface, mesh):
@@ -35,6 +56,7 @@ def board_draw(surface, mesh):
             pygame.draw.ellipse(surface, BLUE,
                                 (a[0] - r, a[1] - r, 2 * r, 2 * r))
 
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -45,8 +67,9 @@ winsize = (800, 600)
 pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
-matrix = rhombus_mesh(20, winsize[1] // 2, 8, 8, 50)
-pprint(matrix)
+matrix = triangle_mesh(20, winsize[1] // 2, 8, 8, 50)
+rotate_mesh(canvas, matrix, math.pi / 4)
+# pprint(matrix)
 board_draw(canvas, matrix)
 
 while True:

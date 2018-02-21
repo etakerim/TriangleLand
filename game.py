@@ -21,24 +21,18 @@ def triangle_mesh(x, y, n, m, a):
     return mesh
 
 
-def rotate_mesh(c, mesh, angle):
+def rotate_mesh(mesh, angle):
     mid = [(mesh[0][0][0] + mesh[-1][-1][0]) / 2,
            (mesh[0][-1][1] + mesh[-1][0][1]) / 2]
     cos_angle = math.cos(angle)
     sin_angle = math.sin(angle)
 
-    pygame.draw.ellipse(c, RED, (mid[0] - 5, mid[1] - 5, 10, 10))
     for i in range(len(mesh)):
         for j in range(len(mesh[i])):
             vector = [mesh[i][j][0] - mid[0], mesh[i][j][1] - mid[1]]
-            pygame.draw.line(c, RED, mid, mesh[i][j])
-            pygame.display.update()
             new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
                           vector[0] * sin_angle + vector[1] * cos_angle]
             mesh[i][j] = [mid[0] + new_vector[0], mid[1] + new_vector[1]]
-            pygame.draw.line(c, GREEN, mid, mesh[i][j])
-            pygame.display.update()
-            pygame.time.delay(100)
 
 
 def board_draw(surface, mesh):
@@ -68,7 +62,7 @@ pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
 matrix = triangle_mesh(20, winsize[1] // 2, 8, 8, 50)
-rotate_mesh(canvas, matrix, math.pi / 4)
+rotate_mesh(matrix, math.pi / 4)
 # pprint(matrix)
 board_draw(canvas, matrix)
 

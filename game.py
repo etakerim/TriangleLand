@@ -1,7 +1,6 @@
 import sys
 import math
 import pygame
-from pprint import pprint
 
 
 def triangle_mesh(x, y, n, m, a):
@@ -20,10 +19,12 @@ def triangle_mesh(x, y, n, m, a):
 
     return mesh
 
+def find_masscentre(mesh):
+    return [(mesh[0][0][0] + mesh[-1][-1][0]) / 2,
+           (mesh[0][-1][1] + mesh[-1][0][1]) / 2]
 
 def rotate_mesh(mesh, angle):
-    mid = [(mesh[0][0][0] + mesh[-1][-1][0]) / 2,
-           (mesh[0][-1][1] + mesh[-1][0][1]) / 2]
+    mid = find_masscentre(mesh)
     cos_angle = math.cos(angle)
     sin_angle = math.sin(angle)
 

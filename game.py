@@ -107,8 +107,12 @@ canvas = pygame.display.set_mode(winsize)
 m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
-p = Player(100, 100, 30, GREEN)
+p = Player(100, 100, 60, GREEN)
+p1 = Player(200, 100, 60, RED)
+p2 = Player(300, 100, 60, BLUE)
 p.draw(canvas)
+p1.draw(canvas)
+p2.draw(canvas)
 
 while True:
     for event in pygame.event.get():

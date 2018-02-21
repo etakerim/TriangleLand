@@ -2,11 +2,11 @@ import sys
 import math
 import pygame
 
+EQUILATERAL = math.sqrt(3) / 2
+ISOCELES_RIGHT = 0.5
+
 
 class TriangleMesh:
-
-    EQUILATERAL = math.sqrt(3) / 2
-    ISOCELES_RIGHT = 0.5
 
     def __init__(self, x, y, n, m, a, tri=EQUILATERAL):
         self.vertex = []
@@ -70,6 +70,19 @@ class TriangleMesh:
                                     (a[0] - r, a[1] - r, 2 * r, 2 * r))
 
 
+class Player:
+    def __init__(self, x, y, a, color):
+        self.pos = [x, y]
+        self.r = a / math.sqrt(3)
+        self.color = color
+
+    def draw(self, canvas):
+        a = (self.pos[0] - self.r, self.pos[1] + self.r)
+        b = (self.pos[0] + self.r, self.pos[1] + self.r)
+        c = (self.pos[0], self.pos[1] - self.r)
+        pygame.draw.polygon(canvas, self.color, [a, b, c])
+
+
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
@@ -80,9 +93,11 @@ winsize = (800, 600)
 pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
-m = TriangleMesh(20, winsize[1] // 2, 8, 8, 50)
+m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
+p = Player(100, 100, 30, GREEN)
+p.draw(canvas)
 
 while True:
     for event in pygame.event.get():

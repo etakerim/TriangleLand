@@ -1,6 +1,7 @@
 import sys
 import math
 import pygame
+import colorsys
 
 EQUILATERAL = math.sqrt(3) / 2
 ISOCELES_RIGHT = 0.5
@@ -71,16 +72,26 @@ class TriangleMesh:
 
 
 class Player:
+    # TODO: color gradient for any color - pyramid effect
+    # move and occupy by clicking with bindings
+    # animate move with lerp
     def __init__(self, x, y, a, color):
         self.pos = [x, y]
-        self.r = a / math.sqrt(3)
-        self.color = color
+        self.r = int(a / math.sqrt(3))
+        self.color = colorsys.rgb_to_hsv(*color)
 
     def draw(self, canvas):
-        a = (self.pos[0] - self.r, self.pos[1] + self.r)
-        b = (self.pos[0] + self.r, self.pos[1] + self.r)
-        c = (self.pos[0], self.pos[1] - self.r)
-        pygame.draw.polygon(canvas, self.color, [a, b, c])
+        r = self.r
+        color = [self.color[0], self.color[1], 80]
+
+        while r >= 0:
+            a = (self.pos[0] - r, self.pos[1] + r)
+            b = (self.pos[0] + r, self.pos[1] + r)
+            c = (self.pos[0], self.pos[1] - r)
+            pygame.draw.polygon(canvas, colorsys.hsv_to_rgb(*color),
+                                [a, b, c])
+            r -= self.r / 10
+            color[2] += (255 - 80) / 10
 
 
 BLACK = (0, 0, 0)

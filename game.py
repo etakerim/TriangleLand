@@ -2,56 +2,57 @@ import sys
 import math
 import pygame
 
+class TriangleMesh:
 
-def triangle_mesh(x, y, n, m, a):
-    # h = a / 2                       # Isosceles right triangle
-    h = (math.sqrt(3) * a) / 2        # Equilateral triangle
-    a_half = a / 2
-    vertex = [float(x), float(y)]
-    mesh = []
+    EQUILATERAL = math.sqrt(3) / 2
+    ISOCELES_RIGHT = 0.5
 
-    for i in range(1, n + 1):
-        mesh.append([])
-        for j in range(m):
-            mesh[-1].append(vertex)
-            vertex = [vertex[0] + h, vertex[1] - a_half]
-        vertex = [x + i * h, y + i * a_half]
+    def __init__(self, x, y, n, m, a, tri=EQUILATERAL):
+        self.mesh = []
 
-    return mesh
+        h = tri * a
+        a_half = a / 2
+        vertex = [float(x), float(y)]
+
+        for i in range(1, n + 1):
+            self.mesh.append([])
+            for j in range(m):
+                self.mesh[-1].append(vertex)
+                vertex = [vertex[0] + h, vertex[1] - a_half]
+            vertex = [x + i * h, y + i * a_half]
+
+    @property
+    def mass_centre(self):
+        return [(self.mesh[0][0][0] + self.mesh[-1][-1][0]) / 2,
+               (self.mesh[0][-1][1] + self.mesh[-1][0][1]) / 2]
+
+    def rotate(self, angle):
+        a = self.mesh[0][0]
+        cos_angle = math.cos(angle)
+        sin_angle = math.sin(angle)
+
+        for i in range(len(self.mesh)):
+            for j in range(len(self.mesh[i])):
+                vector = [self.mesh[i][j][0] - a[0], self.mesh[i][j][1] - a[1]]
+                new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
+                              vector[0] * sin_angle + vector[1] * cos_angle]
+                self.mesh[i][j] = [a[0] + new_vector[0], a[1] + new_vector[1]]
 
 
-def find_masscentre(mesh):
-    return [(mesh[0][0][0] + mesh[-1][-1][0]) / 2,
-           (mesh[0][-1][1] + mesh[-1][0][1]) / 2]
+    def board_draw(self, surface):
+        r = 5
+        for i in range(len(self.mesh)):
+            for j in range(len(self.mesh[i])):
+                a = self.mesh[i][j]
+                if i + 1 < len(self.mesh):
+                    pygame.draw.aaline(surface, WHITE, a, self.mesh[i + 1][j])
+                    if j - 1 >= 0:
+                        pygame.draw.aaline(surface, WHITE, a, self.mesh[i + 1][j - 1])
+                if j + 1 < len(self.mesh[i]):
+                    pygame.draw.aaline(surface, WHITE, a, self.mesh[i][j + 1])
 
-
-def rotate_mesh(mesh, angle):
-    a = mesh[0][0]
-    cos_angle = math.cos(angle)
-    sin_angle = math.sin(angle)
-
-    for i in range(len(mesh)):
-        for j in range(len(mesh[i])):
-            vector = [mesh[i][j][0] - a[0], mesh[i][j][1] - a[1]]
-            new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
-                          vector[0] * sin_angle + vector[1] * cos_angle]
-            mesh[i][j] = [a[0] + new_vector[0], a[1] + new_vector[1]]
-
-
-def board_draw(surface, mesh):
-    r = 5
-    for i in range(len(mesh)):
-        for j in range(len(mesh[i])):
-            a = mesh[i][j]
-            if i + 1 < len(mesh):
-                pygame.draw.aaline(surface, WHITE, a, mesh[i + 1][j])
-                if j - 1 >= 0:
-                    pygame.draw.aaline(surface, WHITE, a, mesh[i + 1][j - 1])
-            if j + 1 < len(mesh[i]):
-                pygame.draw.aaline(surface, WHITE, a, mesh[i][j + 1])
-
-            pygame.draw.ellipse(surface, BLUE,
-                                (a[0] - r, a[1] - r, 2 * r, 2 * r))
+                pygame.draw.ellipse(surface, BLUE,
+                                    (a[0] - r, a[1] - r, 2 * r, 2 * r))
 
 
 BLACK = (0, 0, 0)
@@ -64,10 +65,9 @@ winsize = (800, 600)
 pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
-matrix = triangle_mesh(20, winsize[1] // 2, 8, 8, 50)
-rotate_mesh(matrix, math.pi / 4)
-# pprint(matrix)
-board_draw(canvas, matrix)
+m = TriangleMesh(20, winsize[1] // 2, 8, 8, 50)
+# m.rotate(math.pi / 4)
+m.board_draw(canvas)
 
 while True:
     for event in pygame.event.get():

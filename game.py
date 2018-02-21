@@ -19,21 +19,23 @@ def triangle_mesh(x, y, n, m, a):
 
     return mesh
 
+
 def find_masscentre(mesh):
     return [(mesh[0][0][0] + mesh[-1][-1][0]) / 2,
            (mesh[0][-1][1] + mesh[-1][0][1]) / 2]
 
+
 def rotate_mesh(mesh, angle):
-    mid = find_masscentre(mesh)
+    a = mesh[0][0]
     cos_angle = math.cos(angle)
     sin_angle = math.sin(angle)
 
     for i in range(len(mesh)):
         for j in range(len(mesh[i])):
-            vector = [mesh[i][j][0] - mid[0], mesh[i][j][1] - mid[1]]
+            vector = [mesh[i][j][0] - a[0], mesh[i][j][1] - a[1]]
             new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
                           vector[0] * sin_angle + vector[1] * cos_angle]
-            mesh[i][j] = [mid[0] + new_vector[0], mid[1] + new_vector[1]]
+            mesh[i][j] = [a[0] + new_vector[0], a[1] + new_vector[1]]
 
 
 def board_draw(surface, mesh):

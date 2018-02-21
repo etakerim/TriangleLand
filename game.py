@@ -34,7 +34,6 @@ class TriangleMesh:
                     pt.append([i, j + 1])
                 if pt:
                     self.edges.append(pt)
-        print(self.edges)
 
 
     @property

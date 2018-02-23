@@ -8,21 +8,21 @@ ISOCELES_RIGHT = 0.5
 
 
 class TriangleMesh:
-    def __init__(self, x, y, n, m, a, tri=EQUILATERAL):
-        self.vertex = []
+    def __init__(self, x, y, width, height, a, tri=EQUILATERAL):
+        self.vertices = []
         self.faces = []
 
         h = tri * a
         a_half = a / 2
-        vertex = [float(x), float(y)]
+        v = [float(x), float(y)]
 
-        for i in range(1, n + 1):
-            self.vertex.append([])
-            for j in range(m):
-                self.vertex[-1].append(vertex)
-                vertex = [vertex[0] + h, vertex[1] - a_half]
-            vertex = [x + i * h, y + i * a_half]
+        for row in range(1, height + 1):
+            for column in range(width):
+                self.vertices.append(v)
+                v = [v[0] + h, v[1] - a_half]
+            v = [x + row * h, y + row * a_half]
 
+        """ 
         for i in range(len(self.vertex) - 1):
             for j in range(len(self.vertex[i])):
                 f = []
@@ -31,6 +31,7 @@ class TriangleMesh:
                 if j + 1 < len(self.vertex[i]):
                     f.append([[i, j], [i + 1, j], [i + 1, j + 1]])
                 self.faces.append(f)
+        """
 
     def rotate(self, angle):
         a = self.vertex[0][0]
@@ -46,6 +47,10 @@ class TriangleMesh:
 
     def board_draw(self, surface):
         r = 5
+        for x, y in self.vertices:
+            pygame.draw.ellipse(surface, BLUE, (x - r, y - r, 2 * r, 2 * r))
+        """
+
         for i in range(len(self.vertex)):
             for j in range(len(self.vertex[i])):
                 a = self.vertex[i][j]
@@ -58,7 +63,7 @@ class TriangleMesh:
 
                 pygame.draw.ellipse(surface, BLUE,
                                     (a[0] - r, a[1] - r, 2 * r, 2 * r))
-
+        """
 
 class Player:
     # move and occupy by clicking with bindings
@@ -93,7 +98,7 @@ winsize = (800, 600)
 pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
-m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
+m = TriangleMesh(20, winsize[1] // 2, 3, 8, 60)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
 p = Player(100, 100, 60, GREEN)

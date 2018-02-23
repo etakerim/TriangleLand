@@ -8,10 +8,9 @@ ISOCELES_RIGHT = 0.5
 
 
 class TriangleMesh:
-
     def __init__(self, x, y, n, m, a, tri=EQUILATERAL):
         self.vertex = []
-        self.edges = []
+        self.faces = []
 
         h = tri * a
         a_half = a / 2
@@ -24,17 +23,14 @@ class TriangleMesh:
                 vertex = [vertex[0] + h, vertex[1] - a_half]
             vertex = [x + i * h, y + i * a_half]
 
-        for i in range(len(self.vertex)):
+        for i in range(len(self.vertex) - 1):
             for j in range(len(self.vertex[i])):
-                pt = []
-                if i + 1 < len(self.vertex):
-                    pt.append([i + 1, j])
-                    if j - 1 >= 0:
-                        pt.append([i + 1, j - 1])
+                f = []
+                if j - 1 >= 0:
+                    f.append([[i, j], [i + 1, j], [i + 1, j - 1]])
                 if j + 1 < len(self.vertex[i]):
-                    pt.append([i, j + 1])
-                if pt:
-                    self.edges.append(pt)
+                    f.append([[i, j], [i + 1, j], [i + 1, j + 1]])
+                self.faces.append(f)
 
     def rotate(self, angle):
         a = self.vertex[0][0]
@@ -47,7 +43,6 @@ class TriangleMesh:
                 new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
                               vector[0] * sin_angle + vector[1] * cos_angle]
                 self.vertex[i][j] = [a[0] + new_vector[0], a[1] + new_vector[1]]
-
 
     def board_draw(self, surface):
         r = 5

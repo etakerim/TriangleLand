@@ -59,6 +59,14 @@ class TriangleMesh:
             new_pos = [a[0] + new_vector[0], a[1] + new_vector[1]]
             self.vertices[i] = Vertex(new_pos, self.vertices[i].faces)
 
+    def neigbour_verticies(self, i_vertex):
+        neighbours = []
+        for f_ref in self.vertices[i_vertex].faces:
+            for v_ref in self.faces[f_ref].vertices:
+                if v_ref != i_vertex and v_ref not in neighbours:
+                    neighbours.append(v_ref)
+        return neighbours
+
     def board_draw(self, surface):
         r = 5
         from random import randrange as rnd
@@ -110,6 +118,10 @@ canvas = pygame.display.set_mode(winsize)
 m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
+print(m.neigbour_verticies(0))
+print(m.neigbour_verticies(10))
+print(m.neigbour_verticies(15))
+
 p = Player(100, 100, 60, GREEN)
 p1 = Player(200, 100, 60, RED)
 p2 = Player(300, 100, 60, BLUE)

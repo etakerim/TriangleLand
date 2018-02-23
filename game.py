@@ -47,23 +47,16 @@ class TriangleMesh:
 
     def board_draw(self, surface):
         r = 5
+        for triangle in self.faces:
+            a = self.vertices[triangle[0]]
+            b = self.vertices[triangle[1]]
+            c = self.vertices[triangle[2]]
+            pygame.draw.aalines(surface, WHITE, True, (a, b, c))
+
         for x, y in self.vertices:
             pygame.draw.ellipse(surface, BLUE, (x - r, y - r, 2 * r, 2 * r))
-        """
 
-        for i in range(len(self.vertex)):
-            for j in range(len(self.vertex[i])):
-                a = self.vertex[i][j]
-                if i + 1 < len(self.vertex):
-                    pygame.draw.aaline(surface, WHITE, a, self.vertex[i + 1][j])
-                    if j - 1 >= 0:
-                        pygame.draw.aaline(surface, WHITE, a, self.vertex[i + 1][j - 1])
-                if j + 1 < len(self.vertex[i]):
-                    pygame.draw.aaline(surface, WHITE, a, self.vertex[i][j + 1])
 
-                pygame.draw.ellipse(surface, BLUE,
-                                    (a[0] - r, a[1] - r, 2 * r, 2 * r))
-        """
 
 class Player:
     # move and occupy by clicking with bindings
@@ -82,8 +75,7 @@ class Player:
             a = (self.pos[0] - r, self.pos[1] + r)
             b = (self.pos[0] + r, self.pos[1] + r)
             c = (self.pos[0], self.pos[1] - r)
-            pygame.draw.polygon(canvas, colorsys.hsv_to_rgb(*color),
-                                [a, b, c])
+            pygame.draw.polygon(canvas, colorsys.hsv_to_rgb(*color), (a, b, c))
             r -= self.r / self.smooth
             color[2] += (255 - 80) / self.smooth
 

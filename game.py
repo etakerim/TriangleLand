@@ -59,7 +59,7 @@ class TriangleMesh:
             new_pos = [a[0] + new_vector[0], a[1] + new_vector[1]]
             self.vertices[i] = Vertex(new_pos, self.vertices[i].faces)
 
-    def neigbour_verticies(self, i_vertex):
+    def neighbour_verticies(self, i_vertex):
         neighbours = []
         for f_ref in self.vertices[i_vertex].faces:
             for v_ref in self.faces[f_ref].vertices:

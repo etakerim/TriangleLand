@@ -72,13 +72,13 @@ class TriangleMesh:
 
 
 class Player:
-    # TODO: color gradient for any color - pyramid effect
     # move and occupy by clicking with bindings
     # animate move with lerp
-    def __init__(self, x, y, a, color):
+    def __init__(self, x, y, a, color, smooth=10):
         self.pos = [x, y]
         self.r = int(a / math.sqrt(3))
         self.color = colorsys.rgb_to_hsv(*color)
+        self.smooth = smooth
 
     def draw(self, canvas):
         r = self.r
@@ -90,8 +90,8 @@ class Player:
             c = (self.pos[0], self.pos[1] - r)
             pygame.draw.polygon(canvas, colorsys.hsv_to_rgb(*color),
                                 [a, b, c])
-            r -= self.r / 10
-            color[2] += (255 - 80) / 10
+            r -= self.r / self.smooth
+            color[2] += (255 - 80) / self.smooth
 
 
 BLACK = (0, 0, 0)

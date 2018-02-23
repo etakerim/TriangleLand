@@ -28,11 +28,10 @@ class TriangleMesh:
         i = lambda row, col: col + row * width
         for r in range(height - 1):
             for c in range(width):
-                if col - 1 >= 0:
+                if c - 1 >= 0:
                     self.faces.append([i(r, c), i(r + 1, c), i(r + 1, c - 1)])
-                if col + 1 < width:
-                    self.faces.append([i(r, c), i(r + 1, c), i(r + 1, c + 1)])
-        print(self.faces)
+                if c + 1 < width:
+                    self.faces.append([i(r, c), i(r + 1, c), i(r, c + 1)])
 
     def rotate(self, angle):
         a = self.vertex[0][0]

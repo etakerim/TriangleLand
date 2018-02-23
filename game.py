@@ -2,6 +2,11 @@ import sys
 import math
 import pygame
 import colorsys
+from collections import namedtuple
+
+
+Vertex = namedtuple('Vertex', ['coords', 'faces'])
+Face = namedtuple('Face', ['vertices', 'color'])
 
 EQUILATERAL = math.sqrt(3) / 2
 ISOCELES_RIGHT = 0.5
@@ -20,7 +25,7 @@ class TriangleMesh:
         # Generate vertices
         for row in range(1, height + 1):
             for col in range(width):
-                self.vertices.append(v)
+                self.vertices.append(Vertex(v, []))
                 v = [v[0] + h, v[1] - a_half]
             v = [x + row * h, y + row * a_half]
 
@@ -29,9 +34,17 @@ class TriangleMesh:
         for r in range(height - 1):
             for c in range(width):
                 if c - 1 >= 0:
-                    self.faces.append([i(r, c), i(r + 1, c), i(r + 1, c - 1)])
+                    face = [i(r, c), i(r + 1, c), i(r + 1, c - 1)]
+                    self.faces.append(Face(face, ''))
                 if c + 1 < width:
-                    self.faces.append([i(r, c), i(r + 1, c), i(r, c + 1)])
+                    face = [i(r, c), i(r + 1, c), i(r, c + 1)]
+                    self.faces.append(Face(face, ''))
+
+        # For each vertex put a list of its neighbouring faces
+        for i, face in enumerate(self.faces):
+            for v in face.vertices:
+                self.vertices[v].faces.append(i)
+
 
     def rotate(self, angle):
         a = self.vertex[0][0]
@@ -47,13 +60,16 @@ class TriangleMesh:
 
     def board_draw(self, surface):
         r = 5
+        from random import randrange as rnd
         for triangle in self.faces:
-            a = self.vertices[triangle[0]]
-            b = self.vertices[triangle[1]]
-            c = self.vertices[triangle[2]]
+            a = self.vertices[triangle.vertices[0]].coords
+            b = self.vertices[triangle.vertices[1]].coords
+            c = self.vertices[triangle.vertices[2]].coords
             pygame.draw.aalines(surface, WHITE, True, (a, b, c))
+            #pygame.draw.polygon(surface, (rnd(255), rnd(255), rnd(255)), (a, b, c))
 
-        for x, y in self.vertices:
+        for v in self.vertices:
+            x, y = v.coords
             pygame.draw.ellipse(surface, BLUE, (x - r, y - r, 2 * r, 2 * r))
 
 
@@ -91,6 +107,9 @@ pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
 m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
+print(m.vertices)
+print()
+print(m.faces)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
 p = Player(100, 100, 60, GREEN)

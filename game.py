@@ -47,16 +47,17 @@ class TriangleMesh:
 
 
     def rotate(self, angle):
-        a = self.vertex[0][0]
+        a = self.vertices[0].coords
         cos_angle = math.cos(angle)
         sin_angle = math.sin(angle)
 
-        for i in range(len(self.vertex)):
-            for j in range(len(self.vertex[i])):
-                vector = [self.vertex[i][j][0] - a[0], self.vertex[i][j][1] - a[1]]
-                new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
-                              vector[0] * sin_angle + vector[1] * cos_angle]
-                self.vertex[i][j] = [a[0] + new_vector[0], a[1] + new_vector[1]]
+        for i, v in enumerate(self.vertices):
+            b = v.coords
+            vector = [b[0] - a[0], b[1] - a[1]]
+            new_vector = [vector[0] * cos_angle - vector[1] * sin_angle,
+                          vector[0] * sin_angle + vector[1] * cos_angle]
+            new_pos = [a[0] + new_vector[0], a[1] + new_vector[1]]
+            self.vertices[i] = Vertex(new_pos, self.vertices[i].faces)
 
     def board_draw(self, surface):
         r = 5
@@ -107,9 +108,6 @@ pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
 m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
-print(m.vertices)
-print()
-print(m.faces)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
 p = Player(100, 100, 60, GREEN)

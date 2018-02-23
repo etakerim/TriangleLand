@@ -9,6 +9,7 @@ ISOCELES_RIGHT = 0.5
 
 class TriangleMesh:
     def __init__(self, x, y, width, height, a, tri=EQUILATERAL):
+        # Using Face-Vertex mesh datastructure
         self.vertices = []
         self.faces = []
 
@@ -16,22 +17,24 @@ class TriangleMesh:
         a_half = a / 2
         v = [float(x), float(y)]
 
+        # Generate vertices
         for row in range(1, height + 1):
-            for column in range(width):
+            for col in range(width):
                 self.vertices.append(v)
                 v = [v[0] + h, v[1] - a_half]
             v = [x + row * h, y + row * a_half]
 
-        """ 
-        for i in range(len(self.vertex) - 1):
-            for j in range(len(self.vertex[i])):
-                f = []
-                if j - 1 >= 0:
-                    f.append([[i, j], [i + 1, j], [i + 1, j - 1]])
-                if j + 1 < len(self.vertex[i]):
-                    f.append([[i, j], [i + 1, j], [i + 1, j + 1]])
-                self.faces.append(f)
-        """
+        # Generate faces pointing to vertex array by index
+        i = lambda row, col: col + row * width
+        for r in range(height - 1):
+            for c in range(width):
+                quad = []
+                if col - 1 >= 0:
+                    quad.append([i(r, c), i(r + 1, c), i(r + 1, c - 1)])
+                if col + 1 < width:
+                    quad.append([i(r, c), i(r + 1, c), i(r + 1, c + 1)])
+                self.faces.extend(quad)
+        print(self.faces)
 
     def rotate(self, angle):
         a = self.vertex[0][0]
@@ -98,7 +101,7 @@ winsize = (800, 600)
 pygame.init()
 canvas = pygame.display.set_mode(winsize)
 
-m = TriangleMesh(20, winsize[1] // 2, 3, 8, 60)
+m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
 p = Player(100, 100, 60, GREEN)

@@ -36,12 +36,6 @@ class TriangleMesh:
                 if pt:
                     self.edges.append(pt)
 
-
-    @property
-    def mass_centre(self):
-        return [(self.vertex[0][0][0] + self.vertex[-1][-1][0]) / 2,
-               (self.vertex[0][-1][1] + self.vertex[-1][0][1]) / 2]
-
     def rotate(self, angle):
         a = self.vertex[0][0]
         cos_angle = math.cos(angle)

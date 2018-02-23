@@ -82,7 +82,6 @@ class TriangleMesh:
             pygame.draw.ellipse(surface, BLUE, (x - r, y - r, 2 * r, 2 * r))
 
 
-
 class Player:
     # move and occupy by clicking with bindings
     # animate move with lerp
@@ -91,19 +90,24 @@ class Player:
         self.r = int(a / math.sqrt(3))
         self.color = colorsys.rgb_to_hsv(*color)
         self.smooth = smooth
+        self.texture = self.render_texture(a)
 
-    def draw(self, canvas):
+    def render_texture(self, x):
         r = self.r
         color = [self.color[0], self.color[1], 80]
+        texture = pygame.Surface((r * 2, r * 2), flags=pygame.SRCALPHA)
 
         while r >= 0:
-            a = (self.pos[0] - r, self.pos[1] + r)
-            b = (self.pos[0] + r, self.pos[1] + r)
-            c = (self.pos[0], self.pos[1] - r)
-            pygame.draw.polygon(canvas, colorsys.hsv_to_rgb(*color), (a, b, c))
+            a = (self.r - r, self.r + r)
+            b = (self.r + r, self.r + r)
+            c = (self.r, self.r - r)
+            pygame.draw.polygon(texture, colorsys.hsv_to_rgb(*color), (a, b, c))
             r -= self.r / self.smooth
             color[2] += (255 - 80) / self.smooth
+        return texture
 
+    def draw(self, canvas):
+        canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
@@ -118,7 +122,7 @@ canvas = pygame.display.set_mode(winsize)
 m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
 # m.rotate(math.pi / 4)
 m.board_draw(canvas)
-p = Player(100, 100, 40, GREEN)
+p = Player(20, 300, 40, GREEN)
 p.draw(canvas)
 
 while True:

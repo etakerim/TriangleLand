@@ -13,6 +13,7 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
+MENU_BGC = (19, 123, 58)
 
 EQUILATERAL = math.sqrt(3) / 2
 ISOCELES_RIGHT = 0.5
@@ -127,20 +128,33 @@ class Player:
 class Game:
     def __init__(self, width, height):
         self.fontfile = 'Triangles-Regular.otf'
+        self.title = 'COUNTRY OF 3 VERTICES'
         self.width = width
         self.height = height
         pygame.init()
         self.canvas = pygame.display.set_mode((self.width, self.height),
-                pygame.RESIZABLE)
+                                              pygame.RESIZABLE)
         # self.board = Board(20, self.winsize[1] // 2, 8, 8, fieldsize)
         # self.player = Player(20, self.winsize[1] // 3, fieldsize // 2, GREEN)
 
+    def font_optsize(self, text, scale):
+        return int(2 * ((self.width * scale) / len(text)))
+
+    def center_xmargin(self, textsurf):
+        return (self.width - textsurf.get_rect()[2]) // 2
+
     def intro_screen(self):
-        fontb = pygame.font.Font(self.fontfile, 50)
-        font = pygame.font.Font(self.fontfile, 40)
-        title = fontb.render('COUNTRY OF 3 VERTICES', False, (255, 240, 0))
-        play = font.render('PLAY', False, WHITE)
-        guide = font.render('HOW TO', False, WHITE)
+        fontsize = self.font_optsize(self.title, 0.7)
+        font = pygame.font.Font(self.fontfile, fontsize)
+
+        title = font.render(self.title, False, (255, 240, 0), MENU_BGC)
+        play = font.render('PLAY', False, WHITE, MENU_BGC)
+        guide = font.render('HOW TO', False, WHITE, MENU_BGC)
+
+        self.canvas.fill(MENU_BGC)
+        self.canvas.blit(title, (self.center_xmargin(title), 30))
+        playbtn = self.canvas.blit(play, (self.center_xmargin(play), 200))
+        guidebtn = self.canvas.blit(guide, (self.center_xmargin(guide), 300))
 
         while True:
             for event in pygame.event.get():
@@ -158,14 +172,8 @@ class Game:
                     self.height = event.h
                     pygame.display.set_mode(event.size, pygame.RESIZABLE)
 
-            self.canvas.fill((19, 123, 58))
-            self.canvas.blit(title, (100, 30))
-            playbtn = self.canvas.blit(play, (150, 200))
-            guidebtn = self.canvas.blit(guide, (150, 300))
-
             pygame.display.update()
             pygame.time.delay(30)
-
 
     def event_loop(self):
         # self.board.draw(self.canvas)

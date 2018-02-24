@@ -142,11 +142,11 @@ class Game:
     def font_optsize(self, text, relative):
         return int(2 * ((self.width * relative) / len(text)))
 
-    def xmargin(self, textsurf, relative=0.5):
-        return (self.width - textsurf.get_rect()[2]) * relative
+    def xmargin(self, surface, relative=0.5):
+        return (self.width - surface.get_rect()[2]) * relative
 
-    def ymargin(self, textsurf, relative=0.5):
-        return (self.height - textsurf.get_rect()[3]) * relative
+    def ymargin(self, surface, relative=0.5):
+        return (self.height - surface.get_rect()[3]) * relative
 
     def intro_layout_draw(self):
         fontsize = self.font_optsize(self.title, 0.7)

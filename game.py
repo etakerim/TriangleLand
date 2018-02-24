@@ -134,8 +134,15 @@ class Game:
         print(self.board.faces_of_edge(9, 2))
 
     def event_loop(self):
-        self.board.draw(self.canvas)
-        self.player.draw(self.canvas)
+        font = pygame.font.Font('Triangles-Regular.otf', 50)
+        title = font.render('COUNTRY OF 3 VERTICES', False, WHITE)
+        play = font.render('PLAY', False, WHITE)
+        guide = font.render('HOW TO', False, WHITE)
+        self.canvas.blit(title, (100, 100))
+        self.canvas.blit(play, (100, 200))
+        self.canvas.blit(guide, (100, 300))
+        # self.board.draw(self.canvas)
+        # self.player.draw(self.canvas)
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

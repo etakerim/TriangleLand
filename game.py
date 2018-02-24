@@ -125,22 +125,49 @@ class Player:
 
 
 class Game:
-    def __init__(self, winsize, fieldsize):
-        self.winsize = winsize
+    def __init__(self, width, height):
+        self.fontfile = 'Triangles-Regular.otf'
+        self.width = width
+        self.height = height
         pygame.init()
-        self.canvas = pygame.display.set_mode(self.winsize)
-        self.board = Board(20, self.winsize[1] // 2, 8, 8, fieldsize)
-        self.player = Player(20, self.winsize[1] // 3, fieldsize // 2, GREEN)
-        print(self.board.faces_of_edge(9, 2))
+        self.canvas = pygame.display.set_mode((self.width, self.height),
+                pygame.RESIZABLE)
+        # self.board = Board(20, self.winsize[1] // 2, 8, 8, fieldsize)
+        # self.player = Player(20, self.winsize[1] // 3, fieldsize // 2, GREEN)
 
-    def event_loop(self):
-        font = pygame.font.Font('Triangles-Regular.otf', 50)
-        title = font.render('COUNTRY OF 3 VERTICES', False, WHITE)
+    def intro_screen(self):
+        fontb = pygame.font.Font(self.fontfile, 50)
+        font = pygame.font.Font(self.fontfile, 40)
+        title = fontb.render('COUNTRY OF 3 VERTICES', False, (255, 240, 0))
         play = font.render('PLAY', False, WHITE)
         guide = font.render('HOW TO', False, WHITE)
-        self.canvas.blit(title, (100, 100))
-        self.canvas.blit(play, (100, 200))
-        self.canvas.blit(guide, (100, 300))
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        if playbtn.collidepoint(event.pos):
+                            print()
+                        elif guidebtn.collidepoint(event.pos):
+                            print()
+                elif event.type == pygame.VIDEORESIZE:
+                    self.width = event.w
+                    self.height = event.h
+                    pygame.display.set_mode(event.size, pygame.RESIZABLE)
+
+            self.canvas.fill((19, 123, 58))
+            self.canvas.blit(title, (100, 30))
+            playbtn = self.canvas.blit(play, (150, 200))
+            guidebtn = self.canvas.blit(guide, (150, 300))
+
+            pygame.display.update()
+            pygame.time.delay(30)
+
+
+    def event_loop(self):
         # self.board.draw(self.canvas)
         # self.player.draw(self.canvas)
         while True:
@@ -152,6 +179,8 @@ class Game:
             pygame.display.update()
             pygame.time.delay(30)
 
+
 if __name__ == '__main__':
-    game = Game((1000, 550), 70)
-    game.event_loop()
+    game = Game(800, 500)
+    game.intro_screen()
+    # game.event_loop()

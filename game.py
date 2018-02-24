@@ -125,6 +125,8 @@ class Player:
         canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
 
+Button = namedtuple('Button', ['rect', 'callback'])
+
 class Game:
     def __init__(self, width, height):
         self.fontfile = 'Triangles-Regular.otf'
@@ -137,13 +139,16 @@ class Game:
         # self.board = Board(20, self.winsize[1] // 2, 8, 8, fieldsize)
         # self.player = Player(20, self.winsize[1] // 3, fieldsize // 2, GREEN)
 
-    def font_optsize(self, text, scale):
-        return int(2 * ((self.width * scale) / len(text)))
+    def font_optsize(self, text, relative):
+        return int(2 * ((self.width * relative) / len(text)))
 
-    def center_xmargin(self, textsurf):
-        return (self.width - textsurf.get_rect()[2]) // 2
+    def xmargin(self, textsurf, relative=0.5):
+        return (self.width - textsurf.get_rect()[2]) * relative
 
-    def intro_screen(self):
+    def ymargin(self, textsurf, relative=0.5):
+        return (self.height - textsurf.get_rect()[3]) * relative
+
+    def intro_layout_draw(self):
         fontsize = self.font_optsize(self.title, 0.7)
         font = pygame.font.Font(self.fontfile, fontsize)
 
@@ -152,10 +157,16 @@ class Game:
         guide = font.render('HOW TO', False, WHITE, MENU_BGC)
 
         self.canvas.fill(MENU_BGC)
-        self.canvas.blit(title, (self.center_xmargin(title), 30))
-        playbtn = self.canvas.blit(play, (self.center_xmargin(play), 200))
-        guidebtn = self.canvas.blit(guide, (self.center_xmargin(guide), 300))
+        self.canvas.blit(title, (self.xmargin(title), self.ymargin(title, 0.1)))
+        a = Button(self.canvas.blit(play, (self.xmargin(play),
+                                    self.ymargin(play, 0.5))), '')
+        b = Button(self.canvas.blit(guide, (self.xmargin(guide),
+                                    self.ymargin(guide, 0.7))), '')
+        return [a, b]
 
+
+    def intro_screen(self):
+        buttons = self.intro_layout_draw()
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -163,14 +174,15 @@ class Game:
                     return
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
-                        if playbtn.collidepoint(event.pos):
-                            print()
-                        elif guidebtn.collidepoint(event.pos):
-                            print()
+                        for button in buttons:
+                            if button.rect.collidepoint(event.pos):
+                                print()
+                                break
                 elif event.type == pygame.VIDEORESIZE:
                     self.width = event.w
                     self.height = event.h
                     pygame.display.set_mode(event.size, pygame.RESIZABLE)
+                    buttons = self.intro_layout_draw()
 
             pygame.display.update()
             pygame.time.delay(30)

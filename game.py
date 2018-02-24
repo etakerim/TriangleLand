@@ -8,11 +8,17 @@ from collections import namedtuple
 Vertex = namedtuple('Vertex', ['coords', 'faces'])
 Face = namedtuple('Face', ['vertices', 'color'])
 
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+
 EQUILATERAL = math.sqrt(3) / 2
 ISOCELES_RIGHT = 0.5
 
 
-class TriangleMesh:
+class Board:
     def __init__(self, x, y, width, height, a, tri=EQUILATERAL):
         # Using Face-Vertex mesh datastructure
         self.vertices = []
@@ -45,7 +51,6 @@ class TriangleMesh:
             for v in face.vertices:
                 self.vertices[v].faces.append(i)
 
-
     def rotate(self, angle):
         a = self.vertices[0].coords
         cos_angle = math.cos(angle)
@@ -67,7 +72,7 @@ class TriangleMesh:
                     neighbours.append(v_ref)
         return neighbours
 
-    def board_draw(self, surface):
+    def draw(self, surface):
         r = 5
         from random import randrange as rnd
         for triangle in self.faces:
@@ -109,27 +114,27 @@ class Player:
     def draw(self, canvas):
         canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
 
-winsize = (800, 600)
-pygame.init()
-canvas = pygame.display.set_mode(winsize)
+class Game:
+    def __init__(self, winsize, fieldsize):
+        self.winsize = winsize
+        pygame.init()
+        self.canvas = pygame.display.set_mode(self.winsize)
+        self.board = Board(20, self.winsize[1] // 2, 8, 8, fieldsize)
+        self.player = Player(20, self.winsize[1] // 2, fieldsize // 2, GREEN)
 
-m = TriangleMesh(20, winsize[1] // 2, 8, 8, 60)
-# m.rotate(math.pi / 4)
-m.board_draw(canvas)
-p = Player(20, 300, 40, GREEN)
-p.draw(canvas)
+    def event_loop(self):
+        self.board.draw(self.canvas)
+        self.player.draw(self.canvas)
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    return
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+            pygame.display.update()
+            pygame.time.delay(30)
 
-    pygame.display.update()
-    pygame.time.delay(30)
+if __name__ == '__main__':
+    game = Game((1000, 550), 70)
+    game.event_loop()

@@ -126,6 +126,7 @@ class Player:
 
 
 Button = namedtuple('Button', ['rect', 'callback'])
+Signal = namedtuple('Signal', ['setup', 'events', 'draw'])
 
 class Game:
     def __init__(self, width, height):
@@ -133,6 +134,7 @@ class Game:
         self.title = 'COUNTRY OF 3 VERTICES'
         self.width = width
         self.height = height
+        self.intro_buttons = []
         pygame.init()
         self.canvas = pygame.display.set_mode((self.width, self.height),
                                               pygame.RESIZABLE)
@@ -162,45 +164,51 @@ class Game:
                                     self.ymargin(play, 0.5))), '')
         b = Button(self.canvas.blit(guide, (self.xmargin(guide),
                                     self.ymargin(guide, 0.7))), '')
-        return [a, b]
+        self.intro_buttons = [a, b]
 
 
-    def intro_screen(self):
-        buttons = self.intro_layout_draw()
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        for button in buttons:
-                            if button.rect.collidepoint(event.pos):
-                                print()
-                                break
-                elif event.type == pygame.VIDEORESIZE:
-                    self.width = event.w
-                    self.height = event.h
-                    pygame.display.set_mode(event.size, pygame.RESIZABLE)
-                    buttons = self.intro_layout_draw()
+    def intro_screen_events(self, event):
+        LEFT = 1
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == LEFT:
+                for button in self.intro_buttons:
+                    if button.rect.collidepoint(event.pos):
+                        return Signal()
 
-            pygame.display.update()
-            pygame.time.delay(30)
+        elif event.type == pygame.VIDEORESIZE:
+                self.width = event.w
+                self.height = event.h
+                pygame.display.set_mode(event.size, pygame.RESIZABLE)
+                self.intro_layout_draw()
+
 
     def event_loop(self):
         # self.board.draw(self.canvas)
         # self.player.draw(self.canvas)
+        pass
+
+    def run(self, signals=None):
+        signals = signals or Signal(self.intro_layout_draw, self.intro_screen_events, None)
+        if signals.setup:
+            signals.setup()
+
         while True:
+            if signals.draw:
+                signals.draw()
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
 
+                if signals.events:
+                    sig = signals.events(event)
+                    if sig:
+                        signals = sig
+
             pygame.display.update()
             pygame.time.delay(30)
 
-
 if __name__ == '__main__':
     game = Game(800, 500)
-    game.intro_screen()
-    # game.event_loop()
+    game.run()

@@ -64,21 +64,30 @@ class Board:
             new_pos = [a[0] + new_vector[0], a[1] + new_vector[1]]
             self.vertices[i] = Vertex(new_pos, self.vertices[i].faces)
 
-    def neighbour_verticies(self, i_vertex):
+    def vertex_neighbours(self, v):
         neighbours = []
-        for f_ref in self.vertices[i_vertex].faces:
+        for f_ref in self.vertices[v].faces:
             for v_ref in self.faces[f_ref].vertices:
                 if v_ref != i_vertex and v_ref not in neighbours:
                     neighbours.append(v_ref)
         return neighbours
 
+    def vertex_coords(self, v):
+        return self.vertices[v].coords
+
+    def vertex_faces(self, v):
+        return self.vertices[v].faces
+
+    def faces_of_edge(self, v0, v1):
+        return list(set(self.vertex_faces(v0)) & set(self.vertex_faces(v1)))
+
     def draw(self, surface):
         r = 5
         from random import randrange as rnd
         for triangle in self.faces:
-            a = self.vertices[triangle.vertices[0]].coords
-            b = self.vertices[triangle.vertices[1]].coords
-            c = self.vertices[triangle.vertices[2]].coords
+            a = self.vertex_coords(triangle.vertices[0])
+            b = self.vertex_coords(triangle.vertices[1])
+            c = self.vertex_coords(triangle.vertices[2])
             pygame.draw.aalines(surface, WHITE, True, (a, b, c))
             #pygame.draw.polygon(surface, (rnd(255), rnd(255), rnd(255)), (a, b, c))
 
@@ -121,7 +130,8 @@ class Game:
         pygame.init()
         self.canvas = pygame.display.set_mode(self.winsize)
         self.board = Board(20, self.winsize[1] // 2, 8, 8, fieldsize)
-        self.player = Player(20, self.winsize[1] // 2, fieldsize // 2, GREEN)
+        self.player = Player(20, self.winsize[1] // 3, fieldsize // 2, GREEN)
+        print(self.board.faces_of_edge(9, 2))
 
     def event_loop(self):
         self.board.draw(self.canvas)

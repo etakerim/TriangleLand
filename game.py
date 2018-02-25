@@ -99,14 +99,13 @@ class Board:
 class Player:
     # move and occupy by clicking with bindings
     # animate move with lerp
-    def __init__(self, x, y, a, color, smooth=10):
+    def __init__(self, x, y, a, color, alpha=255, smooth=10):
         self.pos = [x, y]
         self.r = int(a / math.sqrt(3))
         self.color = colorsys.rgb_to_hsv(*color)
-        self.smooth = smooth
-        self.texture = self.render_texture(a)
+        self.render_texture(alpha, smooth)
 
-    def render_texture(self, x):
+    def render_texture(self, alpha, smooth):
         r = self.r
         color = [self.color[0], self.color[1], 80]
         texture = pygame.Surface((r * 2, r * 2), flags=pygame.SRCALPHA)
@@ -115,16 +114,16 @@ class Player:
             a = (self.r - r, self.r + r)
             b = (self.r + r, self.r + r)
             c = (self.r, self.r - r)
-            pygame.draw.polygon(texture, colorsys.hsv_to_rgb(*color), (a, b, c))
-            r -= self.r / self.smooth
-            color[2] += (255 - 80) / self.smooth
-        return texture
+            pygame.draw.polygon(texture, (*colorsys.hsv_to_rgb(*color), alpha), (a, b, c))
+            r -= self.r / smooth
+            color[2] += (255 - 80) / smooth
+        self.texture = texture
 
     def draw(self, canvas):
         canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
 
-Signal = namedtuple('Signal', ['setup', 'events', 'draw'])
+Callbacks = namedtuple('Callbacks', ['setup', 'events', 'draw'])
 
 def terminate(event=None):
     pygame.quit()
@@ -133,7 +132,7 @@ def terminate(event=None):
 class Button:
     def __init__(self, rect, callback):
         self.rect = rect
-        self.callback = callback
+        self.on_click = callback
 
 
 class MenuScreen:
@@ -144,8 +143,8 @@ class MenuScreen:
 
     def __init__(self, canvas):
         self.buttons = [
-            Button(None, Signal(self.activate_select, self.events, None)),
-            Button(None, Signal(terminate, None, None))
+            Button(None, Callbacks(self.activate_select, self.events, None)),
+            Button(None, Callbacks(terminate, None, None))
         ]
         self.figpool = False
         self.yrel_pos = [0.1, 0.5, 0.7]
@@ -189,19 +188,24 @@ class MenuScreen:
             if event.button == LEFT:
                 for button in self.buttons:
                     if button.rect.collidepoint(event.pos):
-                        return button.callback
+                        # Nemôžem active_select robiť tu?
+                        return button.on_click
+                if self.figpool:
+                    pass
 
         elif event.type == pygame.VIDEORESIZE:
             pygame.display.set_mode(event.size, pygame.RESIZABLE)
             self.draw()
 
+    def fig_selection(self):
+        pass
+
     def activate_select(self):
         self.figpool = True
         self.yrel_pos = [0.1, 0.4, 0.9]
-        self.draw()
-        # Rebind play button to actually start a game - figure out crossref
-        restore = Signal(self.draw, self.events, None)
-        self.buttons[0].callback = restore
+        self.buttons[0].on_click = Callbacks(None, None, None)
+        # gameplay, gameevents, None)
+        return Callbacks(self.draw, self.events, self.fig_selection)
 
     def pieces_picker(self, surfaces):
         fontsmall = pygame.font.Font(self.fontfile,
@@ -218,10 +222,11 @@ class MenuScreen:
         xpad = figspc // 2
         figwidth = figspc // 2
         ybottom = pieces_container.get_rect()[3] * 0.6
-        pieces = [Player(0 * figspc + xpad, ybottom, figwidth, RED),
-                    Player(1 * figspc + xpad, ybottom, figwidth, GREEN),
-                    Player(2 * figspc + xpad, ybottom, figwidth, BLUE),
-                    Player(3 * figspc + xpad , ybottom, figwidth, WHITE)]
+        al = 128
+        pieces = [Player(0 * figspc + xpad, ybottom, figwidth, RED, al),
+                    Player(1 * figspc + xpad, ybottom, figwidth, GREEN, al),
+                    Player(2 * figspc + xpad, ybottom, figwidth, BLUE, al),
+                    Player(3 * figspc + xpad , ybottom, figwidth, WHITE, al)]
         for piece in pieces:
             piece.draw(pieces_container)
         pygame.draw.rect(pieces_container, self.CONTAINER_BORDER, pieces_container.get_rect(), 3)
@@ -244,26 +249,48 @@ class Game:
         self.board.draw(self.canvas)
         self.player.draw(self.canvas)
 
-    def run(self, signal=None):
-        initsig = Signal(self.menu.draw, self.menu.events, None)
-        signal = signal or initsig
+    def change_callbacks(self, orig, new):
+        """ To have complete control over event loop - 'setup' and 'event' callbacks
+        are able to modify state of loop callbacks by returning a new callback.
+        The reasons are:
+            - Events: they are self explanatory. When user clickes a button or
+                      move / hover over something it usually changes what is
+                      draw. -> Button on_click holds new loop callbacks
+            - Setup: It usually calculates layout
+                     or it can be used as proxy to change currently running
+                     callbacks or animations.
+        """
+        if new:
+            if new.setup:
+                mod = new.setup()
+                return self.change_callbacks(new, mod)
+            else:
+                return new
+        else:
+            return orig
 
-        if signal.setup:
-            signal.setup()
+    def run(self, callbacks=None):
+        """ To have unified control over drawing pipeline 'run' function
+            is calling signal callbacks - 'setup' once - 'events' and
+            'draw' on every iteration
+        """
+        initcalls = Callbacks(self.menu.draw, self.menu.events, None)
+        callbacks = callbacks or initcalls
+
+        if callbacks.setup:
+            callbacks.setup()
 
         while True:
-            if signal.draw:
-                signal.draw()
+            if callbacks.draw:
+                callbacks.draw()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
-                if signal.events:
-                    sig = signal.events(event)
-                    if sig:
-                        signal = sig
-                        if signal.setup:
-                            signal.setup()
+                if callbacks.events:
+                    new = callbacks.events(event)
+                    if new:
+                        callbacks = self.change_callbacks(callbacks, new)
 
             pygame.display.update()
             pygame.time.delay(30)

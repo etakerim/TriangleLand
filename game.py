@@ -13,9 +13,6 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
-MENU_BGC = (19, 123, 58)
-MENU_CONTAINER_BORDER = (172, 172, 172)
-MENU_CONTAINER_COLOR = (47, 19, 4)
 
 EQUILATERAL = math.sqrt(3) / 2
 ISOCELES_RIGHT = 0.5
@@ -127,77 +124,79 @@ class Player:
         canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
 
-Button = namedtuple('Button', ['rect', 'slot'])
+Button = namedtuple('Button', ['rect', 'callback'])
 Signal = namedtuple('Signal', ['setup', 'events', 'draw'])
 
-class Game:
-    def __init__(self, width, height):
+def terminate(event=None):
+    pygame.quit()
+    sys.exit()
+
+
+class MenuScreen:
+    BGCOLOR = (19, 123, 58)
+    HEADING_COLOR = (255, 240, 0)
+    CONTAINER_BORDER = (172, 172, 172)
+    CONTAINER_COLOR = (47, 19, 4)
+
+    def __init__(self, canvas):
+        self.buttons = []
+        self.yrel_pos = [0.1, 0.5, 0.7]
         self.fontfile = 'Triangles-Regular.otf'
-        self.title = 'COUNTRY OF 3 VERTICES'
-        self.width = width
-        self.height = height
-        self.intro_buttons = []
-        pygame.init()
-        self.canvas = pygame.display.set_mode((self.width, self.height),
-                                              pygame.RESIZABLE)
-        pygame.display.set_caption(self.title)
-        fieldsize = 60
-        self.board = Board(20, self.height // 2, 8, 8, fieldsize)
-        self.player = Player(20, self.height // 3, fieldsize // 2, GREEN)
+        self.canvas = canvas
 
     def font_optsize(self, text, relative):
-        return int(2 * ((self.width * relative) / len(text)))
+        return int(2 * ((self.canvas.get_rect()[2] * relative) / len(text)))
 
     def xmargin(self, surface, relative=0.5):
-        return (self.width - surface.get_rect()[2]) * relative
+        return (self.canvas.get_rect()[2] - surface.get_rect()[2]) * relative
 
     def ymargin(self, surface, relative=0.5):
-        return (self.height - surface.get_rect()[3]) * relative
+        return (self.canvas.get_rect()[3] - surface.get_rect()[3]) * relative
 
-    def intro_layout_draw(self):
-        fontsize = self.font_optsize(self.title, 0.7)
+    def draw(self):
+        title = 'COUNTRY OF 3 VERTICES'
+        fontsize = self.font_optsize(title, 0.7)
         font = pygame.font.Font(self.fontfile, fontsize)
 
-        title = font.render(self.title, False, (255, 240, 0), MENU_BGC)
-        play = font.render('PLAY', False, WHITE, MENU_BGC)
-        guide = font.render('QUIT', False, WHITE, MENU_BGC)
+        title = font.render(title, False, self.HEADING_COLOR, self.BGCOLOR)
+        play = font.render('PLAY', False, WHITE, self.BGCOLOR)
+        quit = font.render('QUIT', False, WHITE, self.BGCOLOR)
+        elements = [title, play, quit]
 
-        self.canvas.fill(MENU_BGC)
-        self.canvas.blit(title, (self.xmargin(title), self.ymargin(title, 0.1)))
-        playsurf = self.canvas.blit(play, (self.xmargin(play),
-                                           self.ymargin(play, 0.5)))
-        guidesurf = self.canvas.blit(guide, (self.xmargin(guide),
-                                    self.ymargin(guide, 0.7)))
-        # a = Button(playsurf, Signal(None, None, self.gameplay))
-        a = Button(playsurf, Signal(self.pieces_layout_draw, self.pieces_events, None))
-        b = Button(guidesurf,Signal(self.terminate, None, None))
-        self.intro_buttons = [a, b]
+        self.canvas.fill(self.BGCOLOR)
+        self.surfaces = []
+        for yrel, btn in zip(self.yrel_pos, elements):
+            pos = (self.xmargin(btn), self.ymargin(btn, yrel))
+            surface = self.canvas.blit(btn, pos)
+            self.surfaces.append(surface)
 
-    def pieces_layout_draw(self):
-        font = pygame.font.Font(self.fontfile,
-                                self.font_optsize(self.title, 0.7))
+        self.buttons = [
+            Button(self.surfaces[1], Signal(self.draw, self.events, None)),
+            Button(self.surfaces[2], Signal(terminate, None, None))
+        ]
+
+    def events(self, event):
+        LEFT = 1
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == LEFT:
+                for button in self.buttons:
+                    if button.rect.collidepoint(event.pos):
+                        return button.callback
+
+        elif event.type == pygame.VIDEORESIZE:
+            pygame.display.set_mode(event.size, pygame.RESIZABLE)
+            self.draw()
+
+    def pieces_picker(self, surfaces):
         fontsmall = pygame.font.Font(self.fontfile,
                                 self.font_optsize(self.title, 0.3))
 
+        self.yrel_pos = [0.1, 0.4, 0.9]
+        pieces_container = pygame.Surface((surfaces[0][2],
+                    abs(surfaces[2][1] - 1.2 * surfaces[2][3] - surfaces[1][1])))
 
-        title = font.render(self.title, False, (255, 240, 0), MENU_BGC)
-        play = font.render('PLAY', False, WHITE, MENU_BGC)
-        guide = font.render('QUIT', False, WHITE, MENU_BGC)
+        hint = fontsmall.render('CHOOSE GAME PIECES', False, WHITE, self.CONTAINER_COLOR)
 
-        self.canvas.fill(MENU_BGC)
-
-        titlesurf = self.canvas.blit(title, (self.xmargin(title),
-                                 self.ymargin(title, 0.1)))
-        playsurf = self.canvas.blit(play, (self.xmargin(play),
-                                           self.ymargin(play, 0.4)))
-        guidesurf = self.canvas.blit(guide, (self.xmargin(guide),
-                                             self.ymargin(guide, 0.9)))
-
-        hint = fontsmall.render('CHOOSE GAME PIECES', False, WHITE,
-                                 MENU_CONTAINER_COLOR)
-
-        pieces_container = pygame.Surface((titlesurf[2],
-                    abs(guidesurf[1] - 1.2 * guidesurf[3] - playsurf[1])))
         pieces_container.fill(MENU_CONTAINER_COLOR)
         pieces_container.blit(hint, (5, 5))
         figspc = pieces_container.get_rect()[2] // 4
@@ -210,71 +209,50 @@ class Game:
                     Player(3 * figspc + xpad , ybottom, figwidth, WHITE)]
         for piece in pieces:
             piece.draw(pieces_container)
-        pygame.draw.rect(pieces_container, MENU_CONTAINER_BORDER, pieces_container.get_rect(), 3)
-        self.canvas.blit(pieces_container, (titlesurf[0], playsurf[1] + playsurf[3] + 5))
+        pygame.draw.rect(pieces_container, self.CONTAINER_BORDER, pieces_container.get_rect(), 3)
+        self.canvas.blit(pieces_container, (surfaces[0][0], surfaces[1][1] + surfaces[1][3] + 5))
 
-        a = Button(playsurf, Signal(None, None, self.gameplay))
-        b = Button(guidesurf, Signal(self.terminate, None, None))
-        self.intro_buttons = [a, b]
+        # a = Button(playsurf, Signal(None, None, gameplay))
+        # b = Button(guidesurf, Signal(terminate, None, None))
+        self.buttons = [a, b]
 
-    def terminate(self, event=None):
-        pygame.quit()
-        sys.exit()
 
-    def pieces_events(self, event):
-        LEFT = 1
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == LEFT:
-                for button in self.intro_buttons:
-                    if button.rect.collidepoint(event.pos):
-                        return button.slot
-
-        elif event.type == pygame.VIDEORESIZE:
-            self.width = event.w
-            self.height = event.h
-            pygame.display.set_mode(event.size, pygame.RESIZABLE)
-            self.pieces_layout_draw()
-
-    def intro_screen_events(self, event):
-        LEFT = 1
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == LEFT:
-                for button in self.intro_buttons:
-                    if button.rect.collidepoint(event.pos):
-                        return button.slot
-
-        elif event.type == pygame.VIDEORESIZE:
-            self.width = event.w
-            self.height = event.h
-            pygame.display.set_mode(event.size, pygame.RESIZABLE)
-            self.intro_layout_draw()
-
+class Game:
+    def __init__(self, width, height):
+        self.title = 'COUNTRY OF 3 VERTICES'
+        pygame.init()
+        self.canvas = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+        pygame.display.set_caption(self.title)
+        self.menu = MenuScreen(self.canvas)
+        fieldsize = 60
+        self.board = Board(20, 300, 8, 8, fieldsize)
+        self.player = Player(20, 300, fieldsize // 2, GREEN)
 
     def gameplay(self):
         self.canvas.fill(BLACK)
         self.board.draw(self.canvas)
         self.player.draw(self.canvas)
 
-    def run(self, signals=None):
-        signals = signals or Signal(self.intro_layout_draw,
-                                    self.intro_screen_events,
-                                    None)
-        if signals.setup:
-            signals.setup()
+    def run(self, signal=None):
+        initsig = Signal(self.menu.draw, self.menu.events, None)
+        signal = signal or initsig
+
+        if signal.setup:
+            signal.setup()
 
         while True:
-            if signals.draw:
-                signals.draw()
+            if signal.draw:
+                signal.draw()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.terminate()
-                if signals.events:
-                    sig = signals.events(event)
+                    terminate()
+                if signal.events:
+                    sig = signal.events(event)
                     if sig:
-                        signals = sig
-                        if signals.setup:
-                            signals.setup()
+                        signal = sig
+                        if signal.setup:
+                            signal.setup()
 
             pygame.display.update()
             pygame.time.delay(30)

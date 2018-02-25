@@ -16,7 +16,7 @@ BLUE = (0, 0, 255)
 
 EQUILATERAL = math.sqrt(3) / 2
 ISOCELES_RIGHT = 0.5
-
+game_name = 'COUNTRY OF 3 VERTICES'
 
 class Board:
     def __init__(self, x, y, width, height, a, tri=EQUILATERAL):
@@ -124,12 +124,16 @@ class Player:
         canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
 
-Button = namedtuple('Button', ['rect', 'callback'])
 Signal = namedtuple('Signal', ['setup', 'events', 'draw'])
 
 def terminate(event=None):
     pygame.quit()
     sys.exit()
+
+class Button:
+    def __init__(self, rect, callback):
+        self.rect = rect
+        self.callback = callback
 
 
 class MenuScreen:
@@ -139,7 +143,11 @@ class MenuScreen:
     CONTAINER_COLOR = (47, 19, 4)
 
     def __init__(self, canvas):
-        self.buttons = []
+        self.buttons = [
+            Button(None, Signal(self.activate_select, self.events, None)),
+            Button(None, Signal(terminate, None, None))
+        ]
+        self.figpool = False
         self.yrel_pos = [0.1, 0.5, 0.7]
         self.fontfile = 'Triangles-Regular.otf'
         self.canvas = canvas
@@ -154,26 +162,26 @@ class MenuScreen:
         return (self.canvas.get_rect()[3] - surface.get_rect()[3]) * relative
 
     def draw(self):
-        title = 'COUNTRY OF 3 VERTICES'
-        fontsize = self.font_optsize(title, 0.7)
+        fontsize = self.font_optsize(game_name, 0.7)
         font = pygame.font.Font(self.fontfile, fontsize)
 
-        title = font.render(title, False, self.HEADING_COLOR, self.BGCOLOR)
+        title = font.render(game_name, False, self.HEADING_COLOR, self.BGCOLOR)
         play = font.render('PLAY', False, WHITE, self.BGCOLOR)
         quit = font.render('QUIT', False, WHITE, self.BGCOLOR)
         elements = [title, play, quit]
 
         self.canvas.fill(self.BGCOLOR)
-        self.surfaces = []
+        surfaces = []
         for yrel, btn in zip(self.yrel_pos, elements):
             pos = (self.xmargin(btn), self.ymargin(btn, yrel))
             surface = self.canvas.blit(btn, pos)
-            self.surfaces.append(surface)
+            surfaces.append(surface)
 
-        self.buttons = [
-            Button(self.surfaces[1], Signal(self.draw, self.events, None)),
-            Button(self.surfaces[2], Signal(terminate, None, None))
-        ]
+        if self.figpool:
+            self.pieces_picker(surfaces)
+
+        self.buttons[0].rect = surfaces[1]
+        self.buttons[1].rect = surfaces[2]
 
     def events(self, event):
         LEFT = 1
@@ -187,17 +195,24 @@ class MenuScreen:
             pygame.display.set_mode(event.size, pygame.RESIZABLE)
             self.draw()
 
+    def activate_select(self):
+        self.figpool = True
+        self.yrel_pos = [0.1, 0.4, 0.9]
+        self.draw()
+        # Rebind play button to actually start a game - figure out crossref
+        restore = Signal(self.draw, self.events, None)
+        self.buttons[0].callback = restore
+
     def pieces_picker(self, surfaces):
         fontsmall = pygame.font.Font(self.fontfile,
-                                self.font_optsize(self.title, 0.3))
+                                self.font_optsize(game_name, 0.3))
 
-        self.yrel_pos = [0.1, 0.4, 0.9]
         pieces_container = pygame.Surface((surfaces[0][2],
                     abs(surfaces[2][1] - 1.2 * surfaces[2][3] - surfaces[1][1])))
 
         hint = fontsmall.render('CHOOSE GAME PIECES', False, WHITE, self.CONTAINER_COLOR)
 
-        pieces_container.fill(MENU_CONTAINER_COLOR)
+        pieces_container.fill(self.CONTAINER_COLOR)
         pieces_container.blit(hint, (5, 5))
         figspc = pieces_container.get_rect()[2] // 4
         xpad = figspc // 2
@@ -212,17 +227,13 @@ class MenuScreen:
         pygame.draw.rect(pieces_container, self.CONTAINER_BORDER, pieces_container.get_rect(), 3)
         self.canvas.blit(pieces_container, (surfaces[0][0], surfaces[1][1] + surfaces[1][3] + 5))
 
-        # a = Button(playsurf, Signal(None, None, gameplay))
-        # b = Button(guidesurf, Signal(terminate, None, None))
-        self.buttons = [a, b]
-
 
 class Game:
     def __init__(self, width, height):
-        self.title = 'COUNTRY OF 3 VERTICES'
+        game_name = 'COUNTRY OF 3 VERTICES'
         pygame.init()
         self.canvas = pygame.display.set_mode((width, height), pygame.RESIZABLE)
-        pygame.display.set_caption(self.title)
+        pygame.display.set_caption(game_name)
         self.menu = MenuScreen(self.canvas)
         fieldsize = 60
         self.board = Board(20, 300, 8, 8, fieldsize)

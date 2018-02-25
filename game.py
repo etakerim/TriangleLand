@@ -14,6 +14,8 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 MENU_BGC = (19, 123, 58)
+MENU_CONTAINER_BORDER = (172, 172, 172)
+MENU_CONTAINER_COLOR = (47, 19, 4)
 
 EQUILATERAL = math.sqrt(3) / 2
 ISOCELES_RIGHT = 0.5
@@ -138,6 +140,7 @@ class Game:
         pygame.init()
         self.canvas = pygame.display.set_mode((self.width, self.height),
                                               pygame.RESIZABLE)
+        pygame.display.set_caption(self.title)
         fieldsize = 60
         self.board = Board(20, self.height // 2, 8, 8, fieldsize)
         self.player = Player(20, self.height // 3, fieldsize // 2, GREEN)
@@ -157,18 +160,80 @@ class Game:
 
         title = font.render(self.title, False, (255, 240, 0), MENU_BGC)
         play = font.render('PLAY', False, WHITE, MENU_BGC)
-        guide = font.render('HOW TO', False, WHITE, MENU_BGC)
+        guide = font.render('QUIT', False, WHITE, MENU_BGC)
 
         self.canvas.fill(MENU_BGC)
         self.canvas.blit(title, (self.xmargin(title), self.ymargin(title, 0.1)))
         playsurf = self.canvas.blit(play, (self.xmargin(play),
                                            self.ymargin(play, 0.5)))
-
-        a = Button(playsurf, Signal(None, None, self.gameplay))
-        b = Button(self.canvas.blit(guide, (self.xmargin(guide),
-                                    self.ymargin(guide, 0.7))), '')
+        guidesurf = self.canvas.blit(guide, (self.xmargin(guide),
+                                    self.ymargin(guide, 0.7)))
+        # a = Button(playsurf, Signal(None, None, self.gameplay))
+        a = Button(playsurf, Signal(self.pieces_layout_draw, self.pieces_events, None))
+        b = Button(guidesurf,Signal(self.terminate, None, None))
         self.intro_buttons = [a, b]
 
+    def pieces_layout_draw(self):
+        font = pygame.font.Font(self.fontfile,
+                                self.font_optsize(self.title, 0.7))
+        fontsmall = pygame.font.Font(self.fontfile,
+                                self.font_optsize(self.title, 0.3))
+
+
+        title = font.render(self.title, False, (255, 240, 0), MENU_BGC)
+        play = font.render('PLAY', False, WHITE, MENU_BGC)
+        guide = font.render('QUIT', False, WHITE, MENU_BGC)
+
+        self.canvas.fill(MENU_BGC)
+
+        titlesurf = self.canvas.blit(title, (self.xmargin(title),
+                                 self.ymargin(title, 0.1)))
+        playsurf = self.canvas.blit(play, (self.xmargin(play),
+                                           self.ymargin(play, 0.4)))
+        guidesurf = self.canvas.blit(guide, (self.xmargin(guide),
+                                             self.ymargin(guide, 0.9)))
+
+        hint = fontsmall.render('CHOOSE GAME PIECES', False, WHITE,
+                                 MENU_CONTAINER_COLOR)
+
+        pieces_container = pygame.Surface((titlesurf[2],
+                    abs(guidesurf[1] - 1.2 * guidesurf[3] - playsurf[1])))
+        pieces_container.fill(MENU_CONTAINER_COLOR)
+        pieces_container.blit(hint, (5, 5))
+        figspc = pieces_container.get_rect()[2] // 4
+        xpad = figspc // 2
+        figwidth = figspc // 2
+        ybottom = pieces_container.get_rect()[3] * 0.6
+        pieces = [Player(0 * figspc + xpad, ybottom, figwidth, RED),
+                    Player(1 * figspc + xpad, ybottom, figwidth, GREEN),
+                    Player(2 * figspc + xpad, ybottom, figwidth, BLUE),
+                    Player(3 * figspc + xpad , ybottom, figwidth, WHITE)]
+        for piece in pieces:
+            piece.draw(pieces_container)
+        pygame.draw.rect(pieces_container, MENU_CONTAINER_BORDER, pieces_container.get_rect(), 3)
+        self.canvas.blit(pieces_container, (titlesurf[0], playsurf[1] + playsurf[3] + 5))
+
+        a = Button(playsurf, Signal(None, None, self.gameplay))
+        b = Button(guidesurf, Signal(self.terminate, None, None))
+        self.intro_buttons = [a, b]
+
+    def terminate(self, event=None):
+        pygame.quit()
+        sys.exit()
+
+    def pieces_events(self, event):
+        LEFT = 1
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == LEFT:
+                for button in self.intro_buttons:
+                    if button.rect.collidepoint(event.pos):
+                        return button.slot
+
+        elif event.type == pygame.VIDEORESIZE:
+            self.width = event.w
+            self.height = event.h
+            pygame.display.set_mode(event.size, pygame.RESIZABLE)
+            self.pieces_layout_draw()
 
     def intro_screen_events(self, event):
         LEFT = 1
@@ -203,9 +268,7 @@ class Game:
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    pygame.quit()
-                    return
-
+                    self.terminate()
                 if signals.events:
                     sig = signals.events(event)
                     if sig:

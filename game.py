@@ -125,7 +125,7 @@ class Player:
         canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
 
-Button = namedtuple('Button', ['rect', 'callback'])
+Button = namedtuple('Button', ['rect', 'slot'])
 Signal = namedtuple('Signal', ['setup', 'events', 'draw'])
 
 class Game:
@@ -138,8 +138,9 @@ class Game:
         pygame.init()
         self.canvas = pygame.display.set_mode((self.width, self.height),
                                               pygame.RESIZABLE)
-        # self.board = Board(20, self.winsize[1] // 2, 8, 8, fieldsize)
-        # self.player = Player(20, self.winsize[1] // 3, fieldsize // 2, GREEN)
+        fieldsize = 60
+        self.board = Board(20, self.height // 2, 8, 8, fieldsize)
+        self.player = Player(20, self.height // 3, fieldsize // 2, GREEN)
 
     def font_optsize(self, text, relative):
         return int(2 * ((self.width * relative) / len(text)))
@@ -160,8 +161,10 @@ class Game:
 
         self.canvas.fill(MENU_BGC)
         self.canvas.blit(title, (self.xmargin(title), self.ymargin(title, 0.1)))
-        a = Button(self.canvas.blit(play, (self.xmargin(play),
-                                    self.ymargin(play, 0.5))), '')
+        playsurf = self.canvas.blit(play, (self.xmargin(play),
+                                           self.ymargin(play, 0.5)))
+
+        a = Button(playsurf, Signal(None, None, self.gameplay))
         b = Button(self.canvas.blit(guide, (self.xmargin(guide),
                                     self.ymargin(guide, 0.7))), '')
         self.intro_buttons = [a, b]
@@ -173,22 +176,24 @@ class Game:
             if event.button == LEFT:
                 for button in self.intro_buttons:
                     if button.rect.collidepoint(event.pos):
-                        return Signal()
+                        return button.slot
 
         elif event.type == pygame.VIDEORESIZE:
-                self.width = event.w
-                self.height = event.h
-                pygame.display.set_mode(event.size, pygame.RESIZABLE)
-                self.intro_layout_draw()
+            self.width = event.w
+            self.height = event.h
+            pygame.display.set_mode(event.size, pygame.RESIZABLE)
+            self.intro_layout_draw()
 
 
-    def event_loop(self):
-        # self.board.draw(self.canvas)
-        # self.player.draw(self.canvas)
-        pass
+    def gameplay(self):
+        self.canvas.fill(BLACK)
+        self.board.draw(self.canvas)
+        self.player.draw(self.canvas)
 
     def run(self, signals=None):
-        signals = signals or Signal(self.intro_layout_draw, self.intro_screen_events, None)
+        signals = signals or Signal(self.intro_layout_draw,
+                                    self.intro_screen_events,
+                                    None)
         if signals.setup:
             signals.setup()
 
@@ -205,6 +210,8 @@ class Game:
                     sig = signals.events(event)
                     if sig:
                         signals = sig
+                        if signals.setup:
+                            signals.setup()
 
             pygame.display.update()
             pygame.time.delay(30)

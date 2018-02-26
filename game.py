@@ -105,7 +105,7 @@ class Player:
         self.color = colorsys.rgb_to_hsv(*color)
         self.render_texture(alpha, smooth)
 
-    def render_texture(self, alpha, smooth):
+    def render_texture(self, alpha, smooth=10):
         r = self.r
         color = [self.color[0], self.color[1], 80]
         texture = pygame.Surface((r * 2, r * 2), flags=pygame.SRCALPHA)
@@ -120,7 +120,7 @@ class Player:
         self.texture = texture
 
     def draw(self, canvas):
-        canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
+        return canvas.blit(self.texture, (self.pos[0] - self.r, self.pos[1] - self.r))
 
 
 Callbacks = namedtuple('Callbacks', ['setup', 'events', 'draw'])
@@ -129,11 +129,19 @@ def terminate(event=None):
     pygame.quit()
     sys.exit()
 
+
 class Button:
     def __init__(self, rect, callback):
         self.rect = rect
         self.on_click = callback
 
+
+class Piece:
+    def __init__(self, is_selected, color, player, rect=0):
+        self.is_selected = is_selected
+        self.color = color
+        self.player = player
+        self.rect = rect
 
 class MenuScreen:
     BGCOLOR = (19, 123, 58)
@@ -146,10 +154,15 @@ class MenuScreen:
             Button(None, Callbacks(self.activate_select, self.events, None)),
             Button(None, Callbacks(terminate, None, None))
         ]
-        self.figpool = False
         self.yrel_pos = [0.1, 0.5, 0.7]
         self.fontfile = 'Triangles-Regular.otf'
         self.canvas = canvas
+        self.figpool = False
+        self.fig_refframe = pygame.Rect(0, 0, 0, 0)
+        self.pieces = [Piece(False, RED, None),
+                       Piece(False, GREEN, None),
+                       Piece(False, BLUE, None),
+                       Piece(False, WHITE, None)]
 
     def font_optsize(self, text, relative):
         return int(2 * ((self.canvas.get_rect()[2] * relative) / len(text)))
@@ -191,14 +204,24 @@ class MenuScreen:
                         # Nemôžem active_select robiť tu?
                         return button.on_click
                 if self.figpool:
-                    pass
+                    for piece in self.pieces:
+                        # Recalculte rect based on canvas reference frame not
+                        # container
+                        rrr = piece.player.texture.get_rect()
+                        rrr[0] = self.fig_refframe[0] + piece.rect[0]
+                        rrr[1] = self.fig_refframe[1] + piece.rect[1]
+                        if rrr.collidepoint(event.pos):
+                            piece.is_selected = not piece.is_selected
+                            self.draw()
 
         elif event.type == pygame.VIDEORESIZE:
             pygame.display.set_mode(event.size, pygame.RESIZABLE)
             self.draw()
 
     def fig_selection(self):
-        pass
+           # TODO: redraw - keep track of what changed, delete rectangle in
+           # canvas - draw again
+            pass
 
     def activate_select(self):
         self.figpool = True
@@ -222,15 +245,17 @@ class MenuScreen:
         xpad = figspc // 2
         figwidth = figspc // 2
         ybottom = pieces_container.get_rect()[3] * 0.6
-        al = 128
-        pieces = [Player(0 * figspc + xpad, ybottom, figwidth, RED, al),
-                    Player(1 * figspc + xpad, ybottom, figwidth, GREEN, al),
-                    Player(2 * figspc + xpad, ybottom, figwidth, BLUE, al),
-                    Player(3 * figspc + xpad , ybottom, figwidth, WHITE, al)]
-        for piece in pieces:
-            piece.draw(pieces_container)
+        for i, piece in enumerate(self.pieces):
+            if piece.is_selected:
+                al = 255
+            else:
+                al = 100
+            piece.player = Player(i * figspc + xpad, ybottom, figwidth,
+                                  piece.color, al)
+            piece.rect = piece.player.draw(pieces_container)
+
         pygame.draw.rect(pieces_container, self.CONTAINER_BORDER, pieces_container.get_rect(), 3)
-        self.canvas.blit(pieces_container, (surfaces[0][0], surfaces[1][1] + surfaces[1][3] + 5))
+        self.fig_refframe = self.canvas.blit(pieces_container, (surfaces[0][0], surfaces[1][1] + surfaces[1][3] + 5))
 
 
 class Game:
@@ -294,6 +319,7 @@ class Game:
 
             pygame.display.update()
             pygame.time.delay(30)
+
 
 if __name__ == '__main__':
     game = Game(800, 500)

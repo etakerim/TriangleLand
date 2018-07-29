@@ -18,7 +18,6 @@ func (game *Game) ValidMoves(player *Player) []*Vertex {
     var moves []*Vertex
     var valid bool
 
-    // over prechod cez nepriateľské územie
     for _, cell := range game.Board.VertexNeighbours(player.Cell) {
         valid = true
         for _, p := range game.Players {
@@ -26,6 +25,12 @@ func (game *Game) ValidMoves(player *Player) []*Vertex {
                 valid = false
                 break
             }
+        }
+
+        path := game.Board.FacesOfEdge(cell, player.Cell)
+        if (path[0].Owner != nil && path[1].Owner != nil &&
+            path[0].Owner != player && path[1].Owner != player) {
+            valid = false
         }
 
         if valid {

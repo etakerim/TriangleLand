@@ -69,7 +69,7 @@ func (player *Player) CanOccupy() []*Face {
     neighbours := player.Cell.NextFaces
 
     for _, face := range neighbours {
-        if !face.Occupied {
+        if face.Owner == nil {
             areas = append(areas, face)
         }
     }
@@ -104,7 +104,7 @@ func (player *Player) CheckOccupation() bool {
 }
 
 func (player *Player) MakeClaim(face *Face) {
-    face.Occupied = true
+    face.Owner = player
     face.Color = sdl.Color{240, 240, 240, 255}
 
     player.Claim.Active = true
@@ -113,7 +113,7 @@ func (player *Player) MakeClaim(face *Face) {
 }
 
 func (player *Player) TakeClaim() {
-    player.Claim.Area.Occupied = true
+    player.Claim.Area.Owner = player
     player.Claim.Area.Color = player.Color
     player.Territory = append(player.Territory, player.Claim.Area)
 
@@ -123,7 +123,7 @@ func (player *Player) TakeClaim() {
 }
 
 func (player *Player) LoseClaim() {
-    player.Claim.Area.Occupied = false
+    player.Claim.Area.Owner = nil
     player.Claim.Area.Color = sdl.Color{0, 0, 0, 255}
 
     player.Claim.Active = false

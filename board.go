@@ -20,7 +20,7 @@ type Vertex struct {
 
 type Face struct {
     NextVertices []*Vertex
-    Occupied bool
+    Owner *Player
     Color sdl.Color
 }
 

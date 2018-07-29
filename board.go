@@ -20,6 +20,7 @@ type Vertex struct {
 
 type Face struct {
     NextVertices []*Vertex
+    Occupied bool
     Color sdl.Color
 }
 
@@ -131,6 +132,31 @@ func (board *Board) FacesOfEdge(v0, v1 *Vertex) []*Face {
     }
 
     return intersect
+}
+
+func (board *Board) PointInTriangle(face *Face, p sdl.Point) bool {
+
+    if len(face.NextVertices) != 3 {
+        return false
+    }
+
+    p0 := board.VertexPixel(face.NextVertices[0])
+    p1 := board.VertexPixel(face.NextVertices[1])
+    p2 := board.VertexPixel(face.NextVertices[2])
+
+    dX := p.X - p2.X
+    dY := p.Y - p2.Y
+    dX21 := p2.X - p1.X
+    dY12 := p1.Y - p2.Y
+    d :=  dY12 * (p0.X - p2.X) + dX21 * (p0.Y - p2.Y)
+    s := dY12 * dX + dX21 * dY
+    t := (p2.Y - p0.Y) * dX + (p0.X - p2.X) * dY
+
+    if d < 0 {
+        return s <= 0 && t <= 0 && s + t >= d
+    } else {
+        return s >= 0 && t >= 0 && s + t <= d
+    }
 }
 
 func (board *Board) create_vertices(rows, cols int) GraphicalCoordinate {

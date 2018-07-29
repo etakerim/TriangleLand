@@ -4,6 +4,7 @@ import (
     "github.com/veandco/go-sdl2/sdl"
 )
 
+
 type Game struct {
     Window *sdl.Window
     Renderer *sdl.Renderer
@@ -17,6 +18,7 @@ func (game *Game) ValidMoves(player *Player) []*Vertex {
     var moves []*Vertex
     var valid bool
 
+    // over prechod cez nepriateľské územie
     for _, cell := range game.Board.VertexNeighbours(player.Cell) {
         valid = true
         for _, p := range game.Players {
@@ -76,6 +78,9 @@ func (game *Game) PieceMove(click sdl.Point) {
             }
             player.Move(move_pos)
             player.Cell = move
+            if player.CheckOccupation() {
+                RenderTexture(game.Renderer, game.Board.Texture, game.Board.PaintTexture)
+            }
             game.TakeTurn()
         }
     }
@@ -84,9 +89,9 @@ func (game *Game) PieceMove(click sdl.Point) {
 func (game *Game) HighlightClaimable() {
     game.Claiming = !game.Claiming
 
-    for _, face := range game.ActivePlayer().Cell.NextFaces {
-        if game.Claiming && !face.Occupied {
-            face.Color = sdl.Color{150, 150, 150, 150}
+    for _, face := range game.ActivePlayer().CanOccupy() {
+        if game.Claiming {
+            face.Color = sdl.Color{240, 240, 240, 120}
         } else {
             face.Color = sdl.Color{0, 0, 0, 255}
         }
@@ -99,16 +104,16 @@ func (game *Game) ClaimArea(click sdl.Point) {
     if !game.Claiming {
         return
     }
-    // nastav veci pre playera na obsadzoavnie v structe
-    for _, face := range game.ActivePlayer().Cell.NextFaces {
+    player := game.ActivePlayer()
+
+    for _, face := range player.CanOccupy() {
 
         if game.Board.PointInTriangle(face, click) {
-            for _, f := range game.ActivePlayer().Cell.NextFaces {
+            for _, f := range player.CanOccupy() {
                 f.Color = sdl.Color{0, 0, 0, 255}
             }
-            face.Color = sdl.Color{240, 240, 240, 255}
-            face.Occupied = true
 
+            player.MakeClaim(face)
             RenderTexture(game.Renderer, game.Board.Texture, game.Board.PaintTexture)
             game.Claiming = false
             game.TakeTurn()
@@ -130,7 +135,7 @@ func main() {
     game.Board = NewBoard(game.Renderer, sdl.Point{0, 0}, 60, 8, 8)
     game.Players = make([]Player, len(PLAYER_COLORS))
     for i, color := range PLAYER_COLORS {
-        game.Players[i] = NewPlayer(game.Renderer, 40, color)
+        game.Players[i] = NewPlayer(game.Renderer, 50, color)
     }
 
     for i := range game.Players {
@@ -162,6 +167,9 @@ func main() {
                 if t.Type == sdl.MOUSEBUTTONDOWN {
                     click := sdl.Point{t.X, t.Y}
                     game.ClaimArea(click) // TODO: break if done
+                    if game.Claiming {
+                        game.HighlightClaimable()
+                    }
                     game.PieceMove(click)
                 }
             }

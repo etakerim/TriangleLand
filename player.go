@@ -11,11 +11,10 @@ import (
 type Player struct {
     Cell *Vertex
     Claim struct {
+        Active bool
         Area *Face
         FenceStart *Vertex
     }
-    // Uloženie nárokovaného územia + jeho zrušenie a opustí jeho hranu
-    // + poznačenie kde sa má späť dostať
     Territory []*Face
     Pos sdl.Point
     Radius int16
@@ -62,4 +61,72 @@ func (player *Player) PaintTexture(renderer *sdl.Renderer) {
 func (player *Player) Move(pos sdl.Point) {
     player.Pos.X = pos.X - int32(player.Radius)
     player.Pos.Y = pos.Y - int32(player.Radius)
+}
+
+func (player *Player) CanOccupy() []*Face {
+
+    var areas []*Face
+    neighbours := player.Cell.NextFaces
+
+    for _, face := range neighbours {
+        if !face.Occupied {
+            areas = append(areas, face)
+        }
+    }
+
+    return areas
+}
+
+func (player *Player) CheckOccupation() bool {
+    touching := false
+
+    if player.Claim.Active {
+        // musí sa dotknúť všetkých vrcholov
+        // bug: ak sa vráti tak dostane
+        if player.Cell == player.Claim.FenceStart {
+            player.TakeClaim()
+            return true
+        }
+
+        for _, face := range player.Cell.NextFaces {
+            if face == player.Claim.Area {
+                touching = true
+            }
+        }
+
+        if !touching {
+            player.LoseClaim()
+            return true
+        }
+    }
+
+    return false
+}
+
+func (player *Player) MakeClaim(face *Face) {
+    face.Occupied = true
+    face.Color = sdl.Color{240, 240, 240, 255}
+
+    player.Claim.Active = true
+    player.Claim.Area = face
+    player.Claim.FenceStart = player.Cell
+}
+
+func (player *Player) TakeClaim() {
+    player.Claim.Area.Occupied = true
+    player.Claim.Area.Color = player.Color
+    player.Territory = append(player.Territory, player.Claim.Area)
+
+    player.Claim.Active = false
+    player.Claim.Area = nil
+    player.Claim.FenceStart = nil
+}
+
+func (player *Player) LoseClaim() {
+    player.Claim.Area.Occupied = false
+    player.Claim.Area.Color = sdl.Color{0, 0, 0, 255}
+
+    player.Claim.Active = false
+    player.Claim.Area = nil
+    player.Claim.FenceStart = nil
 }

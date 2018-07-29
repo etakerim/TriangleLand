@@ -16,24 +16,23 @@ type Game struct {
 
 func (game *Game) ValidMoves(player *Player) []*Vertex {
     var moves []*Vertex
-    var valid bool
 
     for _, cell := range game.Board.VertexNeighbours(player.Cell) {
-        valid = true
+        empty := true
         for _, p := range game.Players {
             if cell == p.Cell {
-                valid = false
-                break
+                empty = false
             }
         }
 
-        path := game.Board.FacesOfEdge(cell, player.Cell)
-        if (path[0].Owner != nil && path[1].Owner != nil &&
-            path[0].Owner != player && path[1].Owner != player) {
-            valid = false
+        save_road := false
+        for _, c := range game.Board.FacesOfEdge(cell, player.Cell) {
+            if c.Owner == nil || c.Owner == player {
+                save_road = true
+            }
         }
 
-        if valid {
+        if empty && save_road {
             moves = append(moves, cell)
         }
     }
@@ -158,7 +157,8 @@ func main() {
             case *sdl.QuitEvent:
                 running = false
             case *sdl.WindowEvent:
-                if t.Event == sdl.WINDOWEVENT_RESIZED {
+                if (t.Event == sdl.WINDOWEVENT_RESIZED ||
+                    t.Event == sdl.WINDOWEVENT_SHOWN){
                     game.ScreenRefresh()
                 }
             case *sdl.KeyboardEvent:

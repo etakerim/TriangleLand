@@ -1,5 +1,5 @@
-// TODO: Obsadzovanie územia
 // Relatívne veľkosti a ľahká zmena a prerendrovnie textúry
+// Vypočítaj na konci hry/ v priebehu skóre
 package main
 
 import (
@@ -13,7 +13,7 @@ type Player struct {
     Claim struct {
         Active bool
         Area *Face
-        FenceStart *Vertex
+        Fence map[*Vertex]bool
     }
     Territory []*Face
     Pos sdl.Point
@@ -79,11 +79,17 @@ func (player *Player) CanOccupy() []*Face {
 
 func (player *Player) CheckOccupation() bool {
     touching := false
+    finished := true
 
     if player.Claim.Active {
-        // musí sa dotknúť všetkých vrcholov
-        // bug: ak sa vráti tak dostane
-        if player.Cell == player.Claim.FenceStart {
+        player.Claim.Fence[player.Cell] = true
+
+        for _, v := range player.Claim.Fence {
+            if !v {
+                finished = false
+            }
+        }
+        if finished {
             player.TakeClaim()
             return true
         }
@@ -93,7 +99,6 @@ func (player *Player) CheckOccupation() bool {
                 touching = true
             }
         }
-
         if !touching {
             player.LoseClaim()
             return true
@@ -109,24 +114,21 @@ func (player *Player) MakeClaim(face *Face) {
 
     player.Claim.Active = true
     player.Claim.Area = face
-    player.Claim.FenceStart = player.Cell
+    player.Claim.Fence = make(map[*Vertex]bool)
+    for _, v := range face.NextVertices {
+        player.Claim.Fence[v] = false
+    }
 }
 
 func (player *Player) TakeClaim() {
     player.Claim.Area.Owner = player
     player.Claim.Area.Color = player.Color
     player.Territory = append(player.Territory, player.Claim.Area)
-
     player.Claim.Active = false
-    player.Claim.Area = nil
-    player.Claim.FenceStart = nil
 }
 
 func (player *Player) LoseClaim() {
     player.Claim.Area.Owner = nil
     player.Claim.Area.Color = sdl.Color{0, 0, 0, 255}
-
     player.Claim.Active = false
-    player.Claim.Area = nil
-    player.Claim.FenceStart = nil
 }

@@ -1,5 +1,3 @@
-// Relatívne veľkosti a ľahká zmena a prerendrovnie textúry
-// Vypočítaj na konci hry/ v priebehu skóre
 package main
 
 import (
@@ -36,12 +34,18 @@ func NewPlayer(renderer *sdl.Renderer, width int, color sdl.Color) Player {
 
     var player Player
 
+    player.Color = color
+    player.Resize(renderer, width)
+    return player
+}
+
+
+func (player *Player) Resize(renderer *sdl.Renderer, width int) {
+
     player.Radius = int16(float64(width) / math.Sqrt(3))
     player.Width = int32(2 * player.Radius)
-    player.Color = color
     player.Texture = MakeTexture(renderer, player.PaintTexture,
                                  player.Width, player.Width)
-    return player
 }
 
 func (player *Player) PaintTexture(renderer *sdl.Renderer) {

@@ -9,12 +9,12 @@ import (
 )
 
 
-type GraphicalCoordinate struct {
+type Coordinate struct {
     X, Y float64
 }
 
 type Vertex struct {
-    Pos GraphicalCoordinate
+    Pos Coordinate
     NextFaces []*Face
 }
 
@@ -30,6 +30,7 @@ type Board struct {
     CellRadius int32
     Vertices []Vertex
     Faces []Face
+    VirtualDim Vertex
     Texture *sdl.Texture
 }
 
@@ -41,20 +42,33 @@ func (board Board) texture() *sdl.Texture {
     return board.Texture
 }
 
-func NewBoard(renderer *sdl.Renderer, v sdl.Point, a, rows, cols int) Board {
+func NewBoard(renderer *sdl.Renderer, rows, cols int) Board {
     var board Board
-    var virt_dim Vertex
 
-    virt_dim.Pos = board.create_vertices(rows, cols)
+    board.VirtualDim.Pos = board.create_vertices(rows, cols)
     board.link_vertices_faces(rows, cols)
-
-    board.Pos = v
-    board.Scale = a
-    board.CellRadius = int32(board.Scale / 10)
-    dim := board.VertexPixel(&virt_dim)
-    board.Texture = MakeTexture(renderer, board.PaintTexture, dim.X, dim.Y)
+    board.Resize(renderer)
 
     return board
+}
+
+func (board *Board) Resize(renderer *sdl.Renderer) {
+
+    w, h, _ := renderer.GetOutputSize()
+    board.Scale = int(math.Min(float64(w) / board.VirtualDim.Pos.X,
+                               float64(h) / board.VirtualDim.Pos.Y))
+    board.CellRadius = int32(board.Scale / 10)
+
+    dim := board.AbsPx(&board.VirtualDim)
+    board.Texture = MakeTexture(renderer, board.PaintTexture, dim.X, dim.Y)
+    board.Pos = sdl.Point{
+                    X: w / 2 - dim.X / 2,
+                    Y: h / 2 - dim.Y / 2,
+                }
+}
+
+func (board *Board) RenderTexture(renderer *sdl.Renderer) {
+    RenderTexture(renderer, board.Texture, board.PaintTexture)
 }
 
 func (board *Board) PaintTexture(renderer *sdl.Renderer) {
@@ -64,7 +78,7 @@ func (board *Board) PaintTexture(renderer *sdl.Renderer) {
         y := make([]int16, len(face.NextVertices))
 
         for i, v := range face.NextVertices {
-            pos := board.VertexPixel(v)
+            pos := board.AbsPx(v)
             x[i] = int16(pos.X)
             y[i] = int16(pos.Y)
         }
@@ -73,7 +87,7 @@ func (board *Board) PaintTexture(renderer *sdl.Renderer) {
     }
 
     for _, v := range board.Vertices {
-        pos := board.VertexPixel(&v)
+        pos := board.AbsPx(&v)
         gfx.FilledCircleColor(renderer, pos.X, pos.Y, board.CellRadius,
                               sdl.Color{0, 0, 255, 255})
     }
@@ -81,12 +95,23 @@ func (board *Board) PaintTexture(renderer *sdl.Renderer) {
 
 func (board Board) VertexPixel(v *Vertex) sdl.Point {
     return sdl.Point{
+        X: int32(v.Pos.X * float64(board.Scale)) + board.Pos.X,
+        Y: int32(v.Pos.Y * float64(board.Scale)) + board.Pos.Y,
+    }
+}
+
+func (board Board) AbsPx(v *Vertex) sdl.Point {
+    return sdl.Point{
         X: int32(v.Pos.X * float64(board.Scale)),
         Y: int32(v.Pos.Y * float64(board.Scale)),
     }
 }
 
-func (board Board) RandomVertex() *Vertex{
+func (board Board) PlayerSize() int {
+    return int(float64(board.Scale) * 0.8)
+}
+
+func (board Board) RandomVertex() *Vertex {
     n := int32(len(board.Vertices))
     s := rand.NewSource(time.Now().UnixNano())
     rnd := rand.New(s)
@@ -159,9 +184,10 @@ func (board *Board) PointInTriangle(face *Face, p sdl.Point) bool {
     }
 }
 
-func (board *Board) create_vertices(rows, cols int) GraphicalCoordinate {
+func (board *Board) create_vertices(rows, cols int) Coordinate {
 
-    v := GraphicalCoordinate{0.2, float64(cols) * 0.5}
+    const offset = 0.2
+    v := Coordinate{offset, offset + float64(cols - 1) * 0.5}
     x, y := v.X, v.Y
     ht := math.Sqrt(3) / 2
 
@@ -170,20 +196,20 @@ func (board *Board) create_vertices(rows, cols int) GraphicalCoordinate {
             var vertex Vertex
             vertex.Pos = v
             board.Vertices = append(board.Vertices, vertex)
-            v = GraphicalCoordinate{
+            v = Coordinate{
                 X: v.X + ht,
                 Y: v.Y - 0.5,
             }
         }
-        v = GraphicalCoordinate{
+        v = Coordinate{
             X: x + float64(r) * ht,
             Y: y + float64(r) * 0.5,
         }
     }
 
-    return GraphicalCoordinate{
-        X: (x + float64(rows) * ht) * 2,
-        Y: (y + float64(rows) * 0.5) - (y - float64(cols) * 0.5),
+    return Coordinate{
+        X: (x + float64(rows - 1) * ht) * 2,
+        Y: (y + float64(rows - 1) * 0.5) - (y - float64(cols) * 0.5),
     }
 }
 

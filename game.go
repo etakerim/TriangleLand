@@ -1,6 +1,10 @@
+// TODO: relatívne súradnice pri rendrovaní hracej plochy
+// Vypočítaj na konci hry/ v priebehu skóre
+// bug: can make two claims (invalid stays white even after taking turn)
 package main
 
 import (
+    _ "fmt"
     "github.com/veandco/go-sdl2/sdl"
 )
 
@@ -83,7 +87,7 @@ func (game *Game) PieceMove(click sdl.Point) {
             player.Move(move_pos)
             player.Cell = move
             if player.CheckOccupation() {
-                RenderTexture(game.Renderer, game.Board.Texture, game.Board.PaintTexture)
+                game.Board.RenderTexture(game.Renderer)
             }
             game.TakeTurn()
         }
@@ -100,7 +104,7 @@ func (game *Game) HighlightClaimable() {
             face.Color = sdl.Color{0, 0, 0, 255}
         }
     }
-    RenderTexture(game.Renderer, game.Board.Texture, game.Board.PaintTexture)
+    game.Board.RenderTexture(game.Renderer)
     game.ScreenRefresh()
 }
 
@@ -118,7 +122,7 @@ func (game *Game) ClaimArea(click sdl.Point) {
             }
 
             player.MakeClaim(face)
-            RenderTexture(game.Renderer, game.Board.Texture, game.Board.PaintTexture)
+            game.Board.RenderTexture(game.Renderer)
             game.Claiming = false
             game.TakeTurn()
             break
@@ -132,14 +136,14 @@ func main() {
                                   sdl.Color{85, 255, 30, 255},
                                   sdl.Color{30, 255, 200, 255},
                                   sdl.Color{50, 35, 255, 255}}
-
-    game.Window, game.Renderer = CreateSDL("Country of 3 Vertices", 800, 500)
+    game.Window, game.Renderer = CreateSDL("Country of 3 Vertices", 800, 600)
+    game.Window.SetMinimumSize(600, 400)
     defer DestroySDL(game.Window, game.Renderer)
 
-    game.Board = NewBoard(game.Renderer, sdl.Point{0, 0}, 60, 8, 8)
+    game.Board = NewBoard(game.Renderer, 8, 8)
     game.Players = make([]Player, len(PLAYER_COLORS))
     for i, color := range PLAYER_COLORS {
-        game.Players[i] = NewPlayer(game.Renderer, 50, color)
+        game.Players[i] = NewPlayer(game.Renderer, game.Board.PlayerSize(), color)
     }
 
     for i := range game.Players {
@@ -159,6 +163,11 @@ func main() {
             case *sdl.WindowEvent:
                 if (t.Event == sdl.WINDOWEVENT_RESIZED ||
                     t.Event == sdl.WINDOWEVENT_SHOWN){
+                    game.Board.Resize(game.Renderer)
+                    for i := range game.Players {
+                        game.Players[i].Resize(game.Renderer, game.Board.PlayerSize())
+                        game.Players[i].Move(game.Board.VertexPixel(game.Players[i].Cell))
+                    }
                     game.ScreenRefresh()
                 }
             case *sdl.KeyboardEvent:

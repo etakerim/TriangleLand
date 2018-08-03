@@ -12,24 +12,40 @@ type Drawable interface {
 
 func Draw(obj Drawable, renderer *sdl.Renderer, alpha uint8) {
 
-    texture := obj.texture()
-    _, _, w, h, _ := texture.Query()
-    p := obj.pos()
-
     renderer.SetDrawBlendMode(sdl.BLENDMODE_BLEND)
     defer renderer.SetDrawBlendMode(sdl.BLENDMODE_NONE)
+
+    texture := obj.texture()
     texture.SetAlphaMod(alpha)
+    p := obj.pos()
+    _, _, w, h, _ := texture.Query()
     renderer.Copy(texture, nil, &sdl.Rect{p.X, p.Y, w, h})
 }
 
 func CreateSDL(title string, w, h int32) (*sdl.Window, *sdl.Renderer) {
-    err := sdl.Init(sdl.INIT_EVERYTHING)
-    window, err := sdl.CreateWindow(title, 0, 0, w, h, sdl.WINDOW_RESIZABLE)
-    renderer, err := sdl.CreateRenderer(window, -1,
-                        sdl.RENDERER_ACCELERATED | sdl.RENDERER_PRESENTVSYNC)
+    var (
+        err error
+        window *sdl.Window
+        renderer *sdl.Renderer
+    )
 
+    err = sdl.Init(sdl.INIT_EVERYTHING)
     if err != nil {
-        panic(fmt.Sprintf("Chyba pri načítavaní SDL: %s\n", err))
+        panic(fmt.Sprintf("Chyba pri načítaní SDL: %s\n", err))
+    }
+    window, err = sdl.CreateWindow(title, 0, 0, w, h,
+                                   sdl.WINDOW_MAXIMIZED |sdl.WINDOW_RESIZABLE)
+    if err != nil {
+        panic(fmt.Sprintf("Chyba pri vytváraní okna: %s\n", err))
+    }
+    renderer, err = sdl.CreateRenderer(window, -1,
+                        sdl.RENDERER_ACCELERATED | sdl.RENDERER_PRESENTVSYNC)
+    if err != nil {
+        panic(fmt.Sprintf("Chyba pri vytváraní vykreslovača: %s\n", err))
+    }
+    err = ttf.Init()
+    if err != nil {
+        panic(fmt.Sprintf("Chyba pri načítaní knižnice fontov: %s\n", err))
     }
 
     return window, renderer
@@ -38,14 +54,18 @@ func CreateSDL(title string, w, h int32) (*sdl.Window, *sdl.Renderer) {
 func DestroySDL(window *sdl.Window, renderer *sdl.Renderer) {
     renderer.Destroy()
     window.Destroy()
+    ttf.Quit()
     sdl.Quit()
 }
 
 func MakeTexture(renderer *sdl.Renderer, drawer func(*sdl.Renderer),
                  w, h int32) *sdl.Texture {
 
-    texture, _ := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888,
+    texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_RGBA8888,
                                          sdl.TEXTUREACCESS_TARGET, w, h)
+    if err != nil {
+        panic(fmt.Sprintf("Nebolo možné vytvoriť textúru: %s\n", err))
+    }
     RenderTexture(renderer, texture, drawer)
     return texture
 }

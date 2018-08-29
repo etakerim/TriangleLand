@@ -3,7 +3,25 @@ package main
 import (
     "fmt"
     "github.com/veandco/go-sdl2/sdl"
+    "github.com/veandco/go-sdl2/ttf"
 )
+
+func FontSize(renderer *sdl.Renderer, text string, rel float64) int {
+    w, _, _ := renderer.GetOutputSize()
+    return int(2 * ((float64(w) * rel) / float64(len(text))))
+}
+
+func RelPoint(renderer *sdl.Renderer, texture *sdl.Texture,
+              x_rel, y_rel float64) sdl.Point {
+
+    _, _, wt, ht, _ := texture.Query()
+    w, h, _ := renderer.GetOutputSize()
+    return sdl.Point{
+        X: int32(x_rel * float64(w - wt)),
+        Y: int32(y_rel * float64(h - ht)),
+    }
+}
+
 
 type Drawable interface {
     pos() sdl.Point
@@ -79,6 +97,22 @@ func RenderTexture(renderer *sdl.Renderer, texture *sdl.Texture,
     renderer.SetDrawColor(0, 0, 0, 0);
     renderer.Clear();
     drawer(renderer)
+}
+
+func TextRender(renderer *sdl.Renderer, font *ttf.Font,
+                color sdl.Color, text string) *sdl.Texture {
+
+    surface, err  := font.RenderUTF8Solid(text, color)
+    if err != nil {
+        panic(fmt.Sprintf("Rendrovanie textu neúspešné ('%s'): %s\n", text, err))
+    }
+    t, err := renderer.CreateTextureFromSurface(surface)
+    return t
+}
+
+func TextDraw(renderer *sdl.Renderer, pos sdl.Point, text *sdl.Texture) {
+    _, _, w, h, _ := text.Query()
+    renderer.Copy(text, nil, &sdl.Rect{pos.X, pos.Y, w, h})
 }
 
 func Abs(x int32) int32 {

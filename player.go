@@ -113,6 +113,9 @@ func (player *Player) CheckOccupation() bool {
 }
 
 func (player *Player) MakeClaim(face *Face) {
+    if player.Claim.Active {
+        player.LoseClaim()
+    }
     face.Owner = player
     face.Color = sdl.Color{240, 240, 240, 255}
 

@@ -1,6 +1,5 @@
-// TODO: relatívne súradnice pri rendrovaní hracej plochy
+// TODO: relatívne súradnice všade okrem render.go 0..1 (obrazovka)
 // Vypočítaj na konci hry/ v priebehu skóre
-// bug: can make two claims (invalid stays white even after taking turn)
 package main
 
 import (

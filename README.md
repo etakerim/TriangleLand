@@ -22,22 +22,22 @@ Gameboard is composed of equilateral triangles and game pieces are  	tetrahedron
 ### Gameplay mechanics
 
 #### Conquer
-**Status done: 100% **
+**Status done: 100%**
 
 After game pieces have been randomly places into the world, quest of conquering can begin. You can claim one new region at the time. You are presented with nearby areas. You can claim one by clicking on it. When you do so it turns white. Then your task is to visit all of its tips to conquer it (Changes color to that of your piece). If you leave region is automatically freed.
 
 #### Move
-**Status done: 90% ** 
+**Status done: 90%** 
 **TODO:**  Place pieces randomly / pick position at the start of game
 
 On every your turn you can move only to the neighbouring vertex by one step. You are not allowed to walk on the "road" between two enemy regions (as though players are building fences around their consecutive regions) or step on the vertex which is already occupied.
 
 #### Trade
-**Status done: 0% **
+**Status done: 0%**
 When two pieces stand on nearby vertices they can trade any of their areas to maybe gain strategic influence.
 
 #### Ranking
-**Status done: 0% **
+**Status done: 0%**
 - Player's score is determined by summing the number of all edges (roads) connecting vertices of given player's areas (triangles). 
 - If two areas of the same player touch by edge then the sum is multiplied by the number of touching triangles. 
 - If triangle is bordering whit enemy's triangles, this triangles is penalized (loosing points), -1pt for 2 enemy edges, -2pt for 3 enemy edges (completely besieged). 
@@ -49,7 +49,7 @@ For example - When you own **hexagon like area** composed of 6 triangles and sur
 **Total: 72 points** : *(12 x 6) - 0*
 
 #### Menu a HUD
-**Status done: 10% **
+**Status done: 10%**
 
 
 #### Have fun!
